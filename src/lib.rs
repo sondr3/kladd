@@ -1,116 +1,169 @@
-use std::{
-    iter::{FusedIterator, Peekable},
-    str::Chars,
-};
+use std::error::Error;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TokenType<'a> {
     MetadataMarker,
     Bang,
     At,
-    Quote,
     OpenCurly,
     CloseCurly,
     OpenBrace,
     CloseBrace,
     Equals,
     Newline,
-    Text,
-    EOL,
+    Percent,
+    Text(&'a str),
+    EOF,
 }
 
-#[derive(Debug)]
-pub struct Pos {
-    start: usize,
-    end: usize,
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Token<'a> {
+    token_type: TokenType<'a>,
+    line: usize,
+    lexeme: &'a str,
 }
 
-#[derive(Debug)]
-pub struct Segment {
-    pub token: Token,
-    pub pos: Pos,
-}
-
-pub struct Lexer {
-    input: Vec<char>,
-    size: usize,
-    pos: usize,
-}
-
-pub struct LexerIter<'a>(&'a mut Lexer);
-
-impl<'a> FusedIterator for LexerIter<'a> {}
-
-impl<'a> Iterator for LexerIter<'a> {
-    type Item = Segment;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next_token()
+impl<'a> Token<'a> {
+    pub(crate) fn new(token_type: TokenType<'a>, line: usize, lexeme: &'a str) -> Self {
+        Token {
+            token_type,
+            line,
+            lexeme,
+        }
     }
 }
 
-impl Lexer {
-    pub fn new(input: &str) -> Self {
-        Self {
-            size: input.len(),
-            pos: 0,
-            input: input.chars().collect(),
+#[derive(Debug)]
+pub struct Lexer<'a> {
+    source: &'a str,
+    pub(crate) tokens: Vec<Token<'a>>,
+    start: usize,
+    current: usize,
+    line: usize,
+}
+
+impl<'a> Lexer<'a> {
+    pub fn new(source: &'a str) -> Self {
+        Lexer {
+            source,
+            tokens: Vec::new(),
+            start: 0,
+            current: 0,
+            line: 1,
         }
     }
 
-    pub fn iter(&mut self) -> LexerIter {
-        LexerIter(self)
+    pub fn lex_tokens(&mut self) -> Result<(), Box<dyn Error>> {
+        while !self.is_at_end() {
+            self.start = self.current;
+            self.lex()?
+        }
+
+        self.tokens.push(Token::new(TokenType::EOF, 0, ""));
+        Ok(())
     }
 
-    fn at_end(&self) -> bool {
-        self.pos >= self.size
+    fn lex(&mut self) -> Result<(), Box<dyn Error>> {
+        let char = self.advance();
+
+        match char {
+            Some('!') => self.add_token(TokenType::Bang),
+            Some('@') => self.add_token(TokenType::At),
+            Some('{') => self.add_token(TokenType::OpenCurly),
+            Some('}') => self.add_token(TokenType::CloseCurly),
+            Some('[') => self.add_token(TokenType::OpenBrace),
+            Some(']') => self.add_token(TokenType::CloseBrace),
+            Some('=') => self.add_token(TokenType::Equals),
+            Some('\n') => {
+                self.line += 1;
+                self.add_token(TokenType::Newline)
+            }
+            Some('%') => self.add_token(TokenType::Percent),
+            Some('"') => self.quoted_text(),
+            Some(' ') => Ok(()),
+            Some('+') => {
+                if self.match_char('+') && self.match_char('+') {
+                    self.add_token(TokenType::MetadataMarker)
+                } else {
+                    self.text()
+                }
+            }
+            None => self.add_token(TokenType::EOF),
+            _ => self.text(),
+        }
     }
 
-    fn read(&mut self) -> Option<char> {
-        if self.at_end() {
+    fn quoted_text(&mut self) -> Result<(), Box<dyn Error>> {
+        while self.peek() != Some('"') && !self.is_at_end() {
+            if self.peek() == Some('\n') {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            todo!()
+            // return Err(Error::LexerError(
+            //     self.line,
+            //     "Unterminated string.".to_string(),
+            //     "".to_string(),
+            // ));
+        }
+
+        self.advance();
+
+        let value = &self.source[self.start + 1..self.current - 1];
+        self.add_token(TokenType::Text(value))
+    }
+
+    fn text(&mut self) -> Result<(), Box<dyn Error>> {
+        while self.peek().is_some_and(|c| c.is_alphanumeric()) {
+            self.advance();
+        }
+
+        let text = &self.source[self.start..self.current];
+        self.add_token(TokenType::Text(text))
+    }
+
+    fn add_token(&mut self, token: TokenType<'a>) -> Result<(), Box<dyn Error>> {
+        let text = &self.source[self.start..self.current];
+        self.tokens.push(Token::new(token, self.line, text));
+
+        Ok(())
+    }
+
+    fn match_char(&mut self, char: char) -> bool {
+        if self.is_at_end() || self.source.chars().nth(self.current) != Some(char) {
+            false
+        } else {
+            self.current += 1;
+            true
+        }
+    }
+
+    fn is_at_end(&self) -> bool {
+        self.current >= self.source.len()
+    }
+
+    fn advance(&mut self) -> Option<char> {
+        self.current += 1;
+        self.source.chars().nth(self.current - 1)
+    }
+
+    fn peek(&self) -> Option<char> {
+        if self.is_at_end() {
             None
         } else {
-            self.pos += 1;
-            Some(self.input[self.pos - 1])
+            self.source.chars().nth(self.current)
         }
     }
 
-    fn peek(&mut self) -> Option<&char> {
-        self.input.get(self.pos)
-    }
-
-    fn peek_nth(&mut self, n: usize) -> Option<&char> {
-        self.input.get(self.pos + n)
-    }
-
-    fn next_if(&mut self, eq: char) -> Option<char> {
-        match self.peek() {
-            Some(c) if c == &eq => self.read(),
-            _ => None,
+    fn _peek_next(&self) -> Option<char> {
+        if self.current + 1 >= self.source.len() {
+            None
+        } else {
+            self.source.chars().nth(self.current + 1)
         }
-    }
-
-    fn read_segment(&mut self) -> Segment {
-        let tag = match self.peek() {
-            Some('+') => Token::MetadataMarker,
-            Some('!') => Token::Bang,
-            Some('@') => Token::At,
-            Some('"') => Token::Quote,
-            Some('{') => Token::OpenCurly,
-            Some('}') => Token::CloseCurly,
-            Some('[') => Token::OpenBrace,
-            Some(']') => Token::CloseBrace,
-            Some('=') => Token::Equals,
-            Some('\n') => Token::Newline,
-            Some(_) => Token::Text,
-            None => Token::EOL,
-        };
-
-        todo!()
-    }
-
-    fn next_token(&mut self) -> Option<Segment> {
-        todo!()
     }
 }
 
@@ -128,7 +181,8 @@ metadata: things
 
     #[test]
     fn it_works() {
-        let result = Lexer::new(TEST_INPUT).iter().collect::<Vec<_>>();
-        assert!(!result.is_empty());
+        let mut lexer = Lexer::new(TEST_INPUT);
+        assert!(lexer.lex_tokens().is_ok());
+        assert!(!lexer.tokens.is_empty());
     }
 }
