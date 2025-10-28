@@ -1,0 +1,110 @@
+---
+source: src/lexer.rs
+expression: tokens
+---
+[
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
+        kind: MetadataMarker,
+        len: 3,
+    },
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 8,
+    },
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
+        kind: Equals,
+        len: 1,
+    },
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 6,
+    },
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
+        kind: MetadataMarker,
+        len: 3,
+    },
+    Token {
+        kind: Whitespace,
+        len: 2,
+    },
+    Token {
+        kind: Bang,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 2,
+    },
+    Token {
+        kind: OpenCurly,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 4,
+    },
+    Token {
+        kind: Equals,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 5,
+    },
+    Token {
+        kind: CloseCurly,
+        len: 1,
+    },
+    Token {
+        kind: OpenBrace,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 4,
+    },
+    Token {
+        kind: CloseBrace,
+        len: 1,
+    },
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 1,
+    },
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 4,
+    },
+    Token {
+        kind: Whitespace,
+        len: 2,
+    },
+]

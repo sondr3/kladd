@@ -1,9 +1,7 @@
-use std::{error::Error, str::Chars};
-
 use crate::cursor::Cursor;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum TokenType<'a> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TokenKind {
     MetadataMarker,
     Bang,
     At,
@@ -12,160 +10,98 @@ pub enum TokenType<'a> {
     OpenBrace,
     CloseBrace,
     Equals,
-    Newline,
     Percent,
-    Text(&'a str),
+    Text,
+    Whitespace,
     EOF,
+    Unknown,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Token<'a> {
-    token_type: TokenType<'a>,
-    line: usize,
-    lexeme: &'a str,
+pub struct Token {
+    kind: TokenKind,
+    len: usize,
 }
 
-impl<'a> Token<'a> {
-    pub(crate) fn new(token_type: TokenType<'a>, line: usize, lexeme: &'a str) -> Self {
+impl Token {
+    pub(crate) fn new(kind: TokenKind, len: usize) -> Self {
+        Token { kind, len }
+    }
+}
+
+pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
+    let mut cursor = Cursor::new(input);
+    std::iter::from_fn(move || match cursor.advance_token() {
         Token {
-            token_type,
-            line,
-            lexeme,
-        }
-    }
+            kind: TokenKind::EOF,
+            ..
+        } => None,
+        tok => Some(tok),
+    })
 }
 
-#[derive(Debug)]
-pub struct Lexer<'a> {
-    cursor: Cursor<'a>,
-    pub(crate) tokens: Vec<Token<'a>>,
-    start: usize,
-    current: usize,
-    line: usize,
+fn is_whitespace(c: Option<char>) -> bool {
+    c.is_some_and(char::is_whitespace)
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(source: &'a str) -> Self {
-        Lexer {
-            cursor: Cursor::new(source),
-            tokens: Vec::new(),
-            start: 0,
-            current: 0,
-            line: 1,
-        }
-    }
+impl Cursor<'_> {
+    pub fn advance_token(&mut self) -> Token {
+        let Some(first_char) = self.advance() else {
+            return Token::new(TokenKind::EOF, 0);
+        };
 
-    pub fn lex_tokens(&mut self) -> Result<(), Box<dyn Error>> {
-        while !self.is_at_end() {
-            self.start = self.current;
-            self.lex()?
-        }
-
-        self.tokens.push(Token::new(TokenType::EOF, 0, ""));
-        Ok(())
-    }
-
-    fn lex(&mut self) -> Result<(), Box<dyn Error>> {
-        let char = self.advance();
-
-        match char {
-            Some('!') => self.add_token(TokenType::Bang),
-            Some('@') => self.add_token(TokenType::At),
-            Some('{') => self.add_token(TokenType::OpenCurly),
-            Some('}') => self.add_token(TokenType::CloseCurly),
-            Some('[') => self.add_token(TokenType::OpenBrace),
-            Some(']') => self.add_token(TokenType::CloseBrace),
-            Some('=') => self.add_token(TokenType::Equals),
-            Some('\n') => {
-                self.line += 1;
-                self.add_token(TokenType::Newline)
-            }
-            Some('%') => self.add_token(TokenType::Percent),
-            Some('"') => self.quoted_text(),
-            Some(' ') => Ok(()),
-            Some('+') => {
-                if self.match_char('+') && self.match_char('+') {
-                    self.add_token(TokenType::MetadataMarker)
-                } else {
-                    self.text()
-                }
-            }
-            None => self.add_token(TokenType::EOF),
+        let token = match first_char {
+            c if c.is_whitespace() => self.whitespace(),
+            '+' if self.as_str().starts_with("++") => self.metadata(),
+            '!' => TokenKind::Bang,
+            '@' => TokenKind::At,
+            '{' => TokenKind::OpenCurly,
+            '}' => TokenKind::CloseCurly,
+            '[' => TokenKind::OpenBrace,
+            ']' => TokenKind::CloseBrace,
+            '=' => TokenKind::Equals,
+            '%' => TokenKind::Percent,
+            '"' => self.quoted_text(),
             _ => self.text(),
-        }
+        };
+
+        let res = Token::new(token, self.token_pos());
+        self.reset_token_pos();
+        res
     }
 
-    fn quoted_text(&mut self) -> Result<(), Box<dyn Error>> {
-        while self.peek() != Some('"') && !self.is_at_end() {
-            if self.peek() == Some('\n') {
-                self.line += 1;
+    fn whitespace(&mut self) -> TokenKind {
+        self.eat_while(is_whitespace);
+        TokenKind::Whitespace
+    }
+
+    fn metadata(&mut self) -> TokenKind {
+        debug_assert!(self.prev == Some('+'));
+        self.eat_while(|c| c.is_some_and(|i| i == '+'));
+        TokenKind::MetadataMarker
+    }
+
+    fn quoted_text(&mut self) -> TokenKind {
+        debug_assert!(self.prev == Some('"'));
+        while let Some(c) = self.advance() {
+            match c {
+                '"' => return TokenKind::Text,
+                '\\' if self.peek() == Some('\\') || self.peek() == Some('"') => {
+                    self.advance();
+                }
+                _ => (),
             }
+        }
+
+        TokenKind::Unknown
+    }
+
+    fn text(&mut self) -> TokenKind {
+        while self.peek().is_some_and(char::is_alphanumeric) {
             self.advance();
         }
 
-        if self.is_at_end() {
-            todo!()
-            // return Err(Error::LexerError(
-            //     self.line,
-            //     "Unterminated string.".to_string(),
-            //     "".to_string(),
-            // ));
-        }
-
-        self.advance();
-
-        let value = &self.cursor.as_str()[self.start + 1..self.current - 1];
-        self.add_token(TokenType::Text(value))
-    }
-
-    fn text(&mut self) -> Result<(), Box<dyn Error>> {
-        while self.peek().is_some_and(|c| c.is_alphanumeric()) {
-            self.advance();
-        }
-
-        let text = &self.cursor.as_str()[self.start..self.current];
-        self.add_token(TokenType::Text(text))
-    }
-
-    fn add_token(&mut self, token: TokenType<'a>) -> Result<(), Box<dyn Error>> {
-        let text = &self.cursor.as_str()[self.start..self.current];
-        self.tokens.push(Token::new(token, self.line, text));
-
-        Ok(())
-    }
-
-    fn match_char(&mut self, char: char) -> bool {
-        if self.is_at_end() || self.cursor.chars().nth(self.current) != Some(char) {
-            false
-        } else {
-            self.current += 1;
-            true
-        }
-    }
-
-    fn is_at_end(&self) -> bool {
-        self.current >= self.cursor.len()
-    }
-
-    fn advance(&mut self) -> Option<char> {
-        self.current += 1;
-        self.cursor.chars().nth(self.current - 1)
-    }
-
-    fn peek(&self) -> Option<char> {
-        if self.is_at_end() {
-            None
-        } else {
-            self.cursor.chars().nth(self.current)
-        }
-    }
-
-    fn _peek_next(&self) -> Option<char> {
-        if self.current + 1 >= self.cursor.len() {
-            None
-        } else {
-            self.cursor.chars().nth(self.current + 1)
-        }
+        TokenKind::Text
     }
 }
 
@@ -175,16 +111,16 @@ mod tests {
 
     const TEST_INPUT: &'static str = r#"
 +++
-metadata: things
+metadata = things
 +++
 
 !h1{some=value}[With] a body
-    "#;
+ "#;
 
     #[test]
     fn it_works() {
-        let mut lexer = Lexer::new(TEST_INPUT);
-        assert!(lexer.lex_tokens().is_ok());
-        assert!(!lexer.tokens.is_empty());
+        let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
+        assert!(!tokens.is_empty());
+        insta::assert_debug_snapshot!(tokens);
     }
 }
