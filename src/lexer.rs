@@ -12,6 +12,7 @@ pub enum TokenKind {
     Equals,
     Percent,
     Text,
+    Newline,
     Whitespace,
     EOF,
     Unknown,
@@ -40,8 +41,16 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     })
 }
 
-fn is_whitespace(c: Option<char>) -> bool {
+fn _is_whitespace(c: Option<char>) -> bool {
     c.is_some_and(char::is_whitespace)
+}
+
+pub fn is_horizontal_whitespace(c: Option<char>) -> bool {
+    matches!(c, Some('\t' | ' '))
+}
+
+fn is_newline(c: Option<char>) -> bool {
+    c.is_some_and(|c| c == '\n')
 }
 
 impl Cursor<'_> {
@@ -51,7 +60,8 @@ impl Cursor<'_> {
         };
 
         let token = match first_char {
-            c if c.is_whitespace() => self.whitespace(),
+            '\n' => self.newline(),
+            c if is_horizontal_whitespace(Some(c)) => self.whitespace(),
             '+' if self.as_str().starts_with("++") => self.metadata(),
             '!' => TokenKind::Bang,
             '@' => TokenKind::At,
@@ -71,8 +81,13 @@ impl Cursor<'_> {
     }
 
     fn whitespace(&mut self) -> TokenKind {
-        self.eat_while(is_whitespace);
+        self.eat_while(is_horizontal_whitespace);
         TokenKind::Whitespace
+    }
+
+    fn newline(&mut self) -> TokenKind {
+        self.eat_while(is_newline);
+        TokenKind::Newline
     }
 
     fn metadata(&mut self) -> TokenKind {
@@ -104,6 +119,9 @@ impl Cursor<'_> {
         TokenKind::Text
     }
 }
+
+#[cfg(debug_assertions)]
+mod debug_utils {}
 
 #[cfg(test)]
 mod tests {

@@ -4,7 +4,7 @@ expression: tokens
 ---
 [
     Token {
-        kind: Whitespace,
+        kind: Newline,
         len: 1,
     },
     Token {
@@ -12,7 +12,7 @@ expression: tokens
         len: 3,
     },
     Token {
-        kind: Whitespace,
+        kind: Newline,
         len: 1,
     },
     Token {
@@ -36,7 +36,7 @@ expression: tokens
         len: 6,
     },
     Token {
-        kind: Whitespace,
+        kind: Newline,
         len: 1,
     },
     Token {
@@ -44,7 +44,7 @@ expression: tokens
         len: 3,
     },
     Token {
-        kind: Whitespace,
+        kind: Newline,
         len: 2,
     },
     Token {
@@ -104,7 +104,11 @@ expression: tokens
         len: 4,
     },
     Token {
+        kind: Newline,
+        len: 1,
+    },
+    Token {
         kind: Whitespace,
-        len: 2,
+        len: 1,
     },
 ]
