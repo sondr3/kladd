@@ -1,4 +1,4 @@
-use crate::cursor::Cursor;
+use crate::char_cursor::CharCursor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
@@ -20,18 +20,22 @@ pub enum TokenKind {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Token {
-    kind: TokenKind,
+    pub(crate) kind: TokenKind,
     len: usize,
 }
 
 impl Token {
-    pub(crate) fn new(kind: TokenKind, len: usize) -> Self {
+    pub fn new(kind: TokenKind, len: usize) -> Self {
         Token { kind, len }
+    }
+
+    pub fn dummy() -> Self {
+        Token::new(TokenKind::Unknown, 0)
     }
 }
 
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
-    let mut cursor = Cursor::new(input);
+    let mut cursor = CharCursor::new(input);
     std::iter::from_fn(move || match cursor.advance_token() {
         Token {
             kind: TokenKind::EOF,
@@ -49,10 +53,6 @@ pub fn visualize(input: &str) {
     println!("{}", visualizer.visualize());
 }
 
-fn _is_whitespace(c: Option<char>) -> bool {
-    c.is_some_and(char::is_whitespace)
-}
-
 pub fn is_horizontal_whitespace(c: Option<char>) -> bool {
     matches!(c, Some('\t' | ' '))
 }
@@ -61,7 +61,7 @@ fn is_newline(c: Option<char>) -> bool {
     c.is_some_and(|c| c == '\n')
 }
 
-impl Cursor<'_> {
+impl CharCursor<'_> {
     pub fn advance_token(&mut self) -> Token {
         let Some(first_char) = self.advance() else {
             return Token::new(TokenKind::EOF, 0);

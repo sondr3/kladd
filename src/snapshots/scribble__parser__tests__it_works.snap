@@ -1,0 +1,40 @@
+---
+source: src/parser.rs
+expression: blocks
+---
+[
+    Newline,
+    Metadata(
+        [
+            Token {
+                kind: Newline,
+                len: 1,
+            },
+            Token {
+                kind: Text,
+                len: 8,
+            },
+            Token {
+                kind: Whitespace,
+                len: 1,
+            },
+            Token {
+                kind: Equals,
+                len: 1,
+            },
+            Token {
+                kind: Whitespace,
+                len: 1,
+            },
+            Token {
+                kind: Text,
+                len: 6,
+            },
+            Token {
+                kind: Newline,
+                len: 1,
+            },
+        ],
+    ),
+    Newline,
+]

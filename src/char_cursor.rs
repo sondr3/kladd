@@ -1,16 +1,16 @@
 use std::str::Chars;
 
 #[derive(Debug)]
-pub struct Cursor<'a> {
+pub struct CharCursor<'a> {
     pub len_remaining: usize,
     pub chars: Chars<'a>,
     #[cfg(debug_assertions)]
     pub prev: Option<char>,
 }
 
-impl<'a> Cursor<'a> {
+impl<'a> CharCursor<'a> {
     pub fn new(input: &'a str) -> Self {
-        Cursor {
+        CharCursor {
             len_remaining: input.len(),
             chars: input.chars(),
             prev: None,
