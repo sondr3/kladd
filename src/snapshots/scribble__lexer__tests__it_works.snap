@@ -81,7 +81,7 @@ expression: tokens
     },
     Token {
         kind: Text,
-        len: 4,
+        len: 6,
     },
     Token {
         kind: CloseBrace,
@@ -92,6 +92,18 @@ expression: tokens
         len: 1,
     },
     Token {
+        kind: Newline,
+        len: 2,
+    },
+    Token {
+        kind: Text,
+        len: 4,
+    },
+    Token {
+        kind: Whitespace,
+        len: 1,
+    },
+    Token {
         kind: Text,
         len: 1,
     },
@@ -100,8 +112,24 @@ expression: tokens
         len: 1,
     },
     Token {
+        kind: At,
+        len: 1,
+    },
+    Token {
         kind: Text,
         len: 4,
+    },
+    Token {
+        kind: OpenBrace,
+        len: 1,
+    },
+    Token {
+        kind: Text,
+        len: 4,
+    },
+    Token {
+        kind: CloseBrace,
+        len: 1,
     },
     Token {
         kind: Newline,

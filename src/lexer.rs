@@ -41,6 +41,14 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     })
 }
 
+#[cfg(debug_assertions)]
+pub fn visualize(input: &str) {
+    use crate::lexer::debug_utils::LexerVisualizer;
+
+    let mut visualizer = LexerVisualizer::new(input);
+    println!("{}", visualizer.visualize());
+}
+
 fn _is_whitespace(c: Option<char>) -> bool {
     c.is_some_and(char::is_whitespace)
 }
@@ -120,8 +128,72 @@ impl Cursor<'_> {
     }
 }
 
-#[cfg(debug_assertions)]
-mod debug_utils {}
+#[cfg(any(test, debug_assertions))]
+mod debug_utils {
+    use super::*;
+
+    fn tokenkind_to_str(kind: TokenKind) -> &'static str {
+        match kind {
+            TokenKind::MetadataMarker => "METAMARKER",
+            TokenKind::Bang => "BANG",
+            TokenKind::At => "AT",
+            TokenKind::OpenCurly => "OPENCURLY",
+            TokenKind::CloseCurly => "CLOSECURLY",
+            TokenKind::OpenBrace => "OPENBRACE",
+            TokenKind::CloseBrace => "CLOSEBRACE",
+            TokenKind::Equals => "EQUALS",
+            TokenKind::Percent => "PERCENT",
+            TokenKind::Text => "TEXT",
+            TokenKind::Newline => "",
+            TokenKind::Whitespace => "",
+            TokenKind::EOF => "EOF",
+            TokenKind::Unknown => "UNKNOWN",
+        }
+    }
+
+    fn print_token<'a>(token: &'a Token, tester: &'a LexerVisualizer) -> String {
+        format!(
+            "{} {}..{} \"{}\" ",
+            tokenkind_to_str(token.kind),
+            tester.pos,
+            tester.pos + token.len,
+            &tester.input[tester.pos..tester.pos + token.len]
+        )
+    }
+
+    pub struct LexerVisualizer<'a> {
+        input: &'a str,
+        tokens: Vec<Token>,
+        pos: usize,
+    }
+
+    impl<'a> LexerVisualizer<'a> {
+        pub fn new(input: &'a str) -> Self {
+            let tokens = tokenize(input).collect();
+
+            Self {
+                input,
+                tokens,
+                pos: 0,
+            }
+        }
+
+        pub fn visualize(&mut self) -> String {
+            let mut buf = String::new();
+
+            for tok in &self.tokens {
+                match tok.kind {
+                    TokenKind::Newline => buf.push('\n'),
+                    TokenKind::Whitespace => buf.push(' '),
+                    _ => buf.push_str(&print_token(tok, self)),
+                }
+                self.pos += tok.len;
+            }
+
+            buf
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -132,7 +204,9 @@ mod tests {
 metadata = things
 +++
 
-!h1{some=value}[With] a body
+!h1{some=value}[Header] 
+
+With a @bold[body]
  "#;
 
     #[test]
@@ -140,5 +214,12 @@ metadata = things
         let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
         assert!(!tokens.is_empty());
         insta::assert_debug_snapshot!(tokens);
+    }
+
+    #[test]
+    fn it_looks_correct() {
+        let mut tester = debug_utils::LexerVisualizer::new(TEST_INPUT);
+        let res = tester.visualize();
+        insta::assert_snapshot!(res);
     }
 }
