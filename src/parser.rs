@@ -6,9 +6,14 @@ use crate::{
 #[derive(Debug)]
 pub enum Block {
     Metadata(Vec<Token>),
-    Unknown,
+    Block {
+        name: Token,
+        attributes: Vec<Token>,
+        body: Vec<Token>,
+    },
     Whitespace(Whitespace),
     Newline,
+    Unknown,
     EOF,
 }
 
@@ -40,7 +45,10 @@ impl TokenCursor {
             TokenKind::EOF => Block::EOF,
             TokenKind::Unknown => Block::Unknown,
             TokenKind::Whitespace(c) => Block::Whitespace(c),
-            TokenKind::Newline => Block::Newline,
+            TokenKind::Newline => match self.peek_kind() {
+                Some(TokenKind::Bang) => self.parse_block(),
+                _ => Block::Newline,
+            },
             _ => Block::Unknown,
             // crate::lexer::TokenKind::Bang => todo!(),
             // crate::lexer::TokenKind::At => todo!(),
@@ -61,10 +69,41 @@ impl TokenCursor {
 
     fn parse_metadata(&mut self) -> Block {
         let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::MetadataMarker));
-        debug_assert!(self.peek().unwrap().kind == TokenKind::MetadataMarker);
+        debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
         self.advance();
 
         Block::Metadata(body)
+    }
+
+    fn parse_block(&mut self) -> Block {
+        debug_assert!(self.peek_kind() == Some(TokenKind::Bang));
+        self.advance();
+
+        debug_assert!(self.peek_kind() == Some(TokenKind::Text));
+        let name = self.advance();
+
+        let attributes = if self.peek_kind() == Some(TokenKind::OpenCurly) {
+            self.advance();
+            let attrs = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::CloseCurly));
+            debug_assert!(self.peek_kind() == Some(TokenKind::CloseCurly));
+            self.advance();
+            attrs
+        } else {
+            vec![]
+        };
+
+        debug_assert!(self.peek_kind() == Some(TokenKind::OpenBrace));
+        self.advance();
+
+        let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::CloseBrace));
+        debug_assert!(self.peek_kind() == Some(TokenKind::CloseBrace));
+        self.advance();
+
+        Block::Block {
+            name,
+            attributes,
+            body,
+        }
     }
 }
 

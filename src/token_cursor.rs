@@ -1,4 +1,4 @@
-use crate::lexer::Token;
+use crate::lexer::{Token, TokenKind};
 
 #[derive(Debug)]
 pub struct TokenCursor {
@@ -16,6 +16,10 @@ impl TokenCursor {
 
     pub fn peek(&self) -> Option<&Token> {
         self.iter.get(self.idx)
+    }
+
+    pub fn peek_kind(&self) -> Option<TokenKind> {
+        self.iter.get(self.idx).map(|t| t.kind)
     }
 
     pub fn peek_nth(&self, n: usize) -> Option<&Token> {
