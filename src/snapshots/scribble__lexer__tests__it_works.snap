@@ -132,6 +132,22 @@ expression: tokens
         lexeme: "value",
     },
     Token {
+        kind: Comma,
+        lexeme: ",",
+    },
+    Token {
+        kind: Text,
+        lexeme: "other",
+    },
+    Token {
+        kind: Equals,
+        lexeme: "=",
+    },
+    Token {
+        kind: Text,
+        lexeme: "value2",
+    },
+    Token {
         kind: CloseCurly,
         lexeme: "}",
     },

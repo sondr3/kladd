@@ -9,7 +9,7 @@ metadata = things
 
 {*bold*} 
 
-!h1{some=value}[Header] 
+!h1{some=value,other=value2}[Header] 
 
 With a @bold[body] and {/italic/} content
  "#;

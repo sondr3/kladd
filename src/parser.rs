@@ -9,7 +9,7 @@ pub enum AttributeValue<'a> {
     Boolean,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Attribute<'a> {
     pub name: &'a str,
     pub value: AttributeValue<'a>,
@@ -131,11 +131,7 @@ impl<'a> TokenCursor<'a> {
         let name = self.advance().lexeme;
 
         let attributes = if self.peek_kind() == Some(TokenKind::OpenCurly) {
-            self.advance();
-            let attrs = parse_attribute(self);
-            debug_assert!(self.peek_kind() == Some(TokenKind::CloseCurly));
-            self.advance();
-            vec![attrs]
+            parse_attributes(self)
         } else {
             vec![]
         };
@@ -201,6 +197,26 @@ impl<'a> TokenCursor<'a> {
     }
 }
 
+fn parse_attributes<'a>(cursor: &mut TokenCursor<'a>) -> Vec<Attribute<'a>> {
+    let mut res = Vec::new();
+
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
+    cursor.advance();
+
+    loop {
+        res.push(parse_attribute(cursor));
+
+        if cursor.peek_kind() == Some(TokenKind::Comma) {
+            cursor.advance();
+        } else if cursor.peek_kind() == Some(TokenKind::CloseCurly) {
+            cursor.advance();
+            break;
+        }
+    }
+
+    res
+}
+
 fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
     let name = cursor
         .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
@@ -248,5 +264,30 @@ mod tests {
 
             assert_eq!(res.value, expected);
         }
+    }
+
+    #[test]
+    fn test_parse_multiple_attributes() {
+        let lexer = tokenize("{name1=value,name2,name3=value2}").collect::<Vec<_>>();
+        let mut cursor = TokenCursor::new(lexer);
+        let res = parse_attributes(&mut cursor);
+
+        assert_eq!(
+            res,
+            vec![
+                Attribute {
+                    name: "name1",
+                    value: AttributeValue::String("value")
+                },
+                Attribute {
+                    name: "name2",
+                    value: AttributeValue::Boolean
+                },
+                Attribute {
+                    name: "name3",
+                    value: AttributeValue::String("value2")
+                },
+            ]
+        );
     }
 }
