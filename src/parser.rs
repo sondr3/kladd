@@ -1,5 +1,5 @@
 use crate::{
-    lexer::{Token, TokenKind},
+    lexer::{Token, TokenKind, Whitespace},
     token_cursor::TokenCursor,
 };
 
@@ -7,7 +7,7 @@ use crate::{
 pub enum Block {
     Metadata(Vec<Token>),
     Unknown,
-    Whitespace,
+    Whitespace(Whitespace),
     Newline,
     EOF,
 }
@@ -28,7 +28,7 @@ impl TokenCursor {
             TokenKind::MetadataMarker => self.parse_metadata(),
             TokenKind::EOF => Block::EOF,
             TokenKind::Unknown => Block::Unknown,
-            TokenKind::Whitespace => Block::Whitespace,
+            TokenKind::Whitespace(c) => Block::Whitespace(c),
             TokenKind::Newline => Block::Newline,
             _ => Block::Unknown,
             // crate::lexer::TokenKind::Bang => todo!(),

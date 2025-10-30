@@ -1,6 +1,50 @@
 use crate::char_cursor::CharCursor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Whitespace {
+    Space,
+    Tab,
+}
+
+impl From<char> for Whitespace {
+    fn from(value: char) -> Self {
+        match value {
+            '\t' => Whitespace::Tab,
+            ' ' => Whitespace::Space,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<&'static str> for Whitespace {
+    fn from(value: &'static str) -> Self {
+        match value {
+            "\t" => Whitespace::Tab,
+            " " => Whitespace::Space,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<Whitespace> for char {
+    fn from(value: Whitespace) -> char {
+        match value {
+            Whitespace::Tab => '\t',
+            Whitespace::Space => ' ',
+        }
+    }
+}
+
+impl From<Whitespace> for &'static str {
+    fn from(value: Whitespace) -> &'static str {
+        match value {
+            Whitespace::Tab => "\t",
+            Whitespace::Space => " ",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
     MetadataMarker,
     Bang,
@@ -13,7 +57,7 @@ pub enum TokenKind {
     Percent,
     Text,
     Newline,
-    Whitespace,
+    Whitespace(Whitespace),
     EOF,
     Unknown,
 }
@@ -69,7 +113,7 @@ impl CharCursor<'_> {
 
         let token = match first_char {
             '\n' => self.newline(),
-            c if is_horizontal_whitespace(Some(c)) => self.whitespace(),
+            c if is_horizontal_whitespace(Some(c)) => self.whitespace(c),
             '+' if self.as_str().starts_with("++") => self.metadata(),
             '!' => TokenKind::Bang,
             '@' => TokenKind::At,
@@ -88,9 +132,9 @@ impl CharCursor<'_> {
         res
     }
 
-    fn whitespace(&mut self) -> TokenKind {
+    fn whitespace(&mut self, c: char) -> TokenKind {
         self.eat_while(is_horizontal_whitespace);
-        TokenKind::Whitespace
+        TokenKind::Whitespace(Whitespace::from(c))
     }
 
     fn newline(&mut self) -> TokenKind {
@@ -145,7 +189,7 @@ mod debug_utils {
             TokenKind::Percent => "PERCENT",
             TokenKind::Text => "TEXT",
             TokenKind::Newline => "",
-            TokenKind::Whitespace => "",
+            TokenKind::Whitespace(c) => c.into(),
             TokenKind::EOF => "EOF",
             TokenKind::Unknown => "UNKNOWN",
         }
@@ -184,7 +228,7 @@ mod debug_utils {
             for tok in &self.tokens {
                 match tok.kind {
                     TokenKind::Newline => buf.push('\n'),
-                    TokenKind::Whitespace => buf.push(' '),
+                    TokenKind::Whitespace(c) => buf.push(c.into()),
                     _ => buf.push_str(&print_token(tok, self)),
                 }
                 self.pos += tok.len;

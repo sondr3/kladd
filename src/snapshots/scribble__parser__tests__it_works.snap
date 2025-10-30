@@ -15,7 +15,9 @@ expression: blocks
                 len: 8,
             },
             Token {
-                kind: Whitespace,
+                kind: Whitespace(
+                    Space,
+                ),
                 len: 1,
             },
             Token {
@@ -23,7 +25,9 @@ expression: blocks
                 len: 1,
             },
             Token {
-                kind: Whitespace,
+                kind: Whitespace(
+                    Space,
+                ),
                 len: 1,
             },
             Token {

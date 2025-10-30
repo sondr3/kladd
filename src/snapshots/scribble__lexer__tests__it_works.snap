@@ -20,7 +20,9 @@ expression: tokens
         len: 8,
     },
     Token {
-        kind: Whitespace,
+        kind: Whitespace(
+            Space,
+        ),
         len: 1,
     },
     Token {
@@ -28,7 +30,9 @@ expression: tokens
         len: 1,
     },
     Token {
-        kind: Whitespace,
+        kind: Whitespace(
+            Space,
+        ),
         len: 1,
     },
     Token {
@@ -88,7 +92,9 @@ expression: tokens
         len: 1,
     },
     Token {
-        kind: Whitespace,
+        kind: Whitespace(
+            Space,
+        ),
         len: 1,
     },
     Token {
@@ -100,7 +106,9 @@ expression: tokens
         len: 4,
     },
     Token {
-        kind: Whitespace,
+        kind: Whitespace(
+            Space,
+        ),
         len: 1,
     },
     Token {
@@ -108,7 +116,9 @@ expression: tokens
         len: 1,
     },
     Token {
-        kind: Whitespace,
+        kind: Whitespace(
+            Space,
+        ),
         len: 1,
     },
     Token {
@@ -136,7 +146,9 @@ expression: tokens
         len: 1,
     },
     Token {
-        kind: Whitespace,
+        kind: Whitespace(
+            Space,
+        ),
         len: 1,
     },
 ]
