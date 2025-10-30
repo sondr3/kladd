@@ -1,50 +1,6 @@
 use crate::char_cursor::CharCursor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Whitespace {
-    Space,
-    Tab,
-}
-
-impl From<char> for Whitespace {
-    fn from(value: char) -> Self {
-        match value {
-            '\t' => Whitespace::Tab,
-            ' ' => Whitespace::Space,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<&'static str> for Whitespace {
-    fn from(value: &'static str) -> Self {
-        match value {
-            "\t" => Whitespace::Tab,
-            " " => Whitespace::Space,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<Whitespace> for char {
-    fn from(value: Whitespace) -> char {
-        match value {
-            Whitespace::Tab => '\t',
-            Whitespace::Space => ' ',
-        }
-    }
-}
-
-impl From<Whitespace> for &'static str {
-    fn from(value: Whitespace) -> &'static str {
-        match value {
-            Whitespace::Tab => "\t",
-            Whitespace::Space => " ",
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
     MetadataMarker,
     Bang,
@@ -55,46 +11,42 @@ pub enum TokenKind {
     CloseBrace,
     Equals,
     Percent,
+    Comma,
     Text,
     Newline,
-    Whitespace(Whitespace),
+    Whitespace,
     EOF,
     Unknown,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Token {
-    pub(crate) kind: TokenKind,
-    len: usize,
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Token<'a> {
+    pub kind: TokenKind,
+    pub lexeme: &'a str,
 }
 
-impl Token {
-    pub fn new(kind: TokenKind, len: usize) -> Self {
-        Token { kind, len }
+impl<'a> Token<'a> {
+    pub fn new(kind: TokenKind, lexeme: &'a str) -> Self {
+        Token { kind, lexeme }
     }
 
     pub fn dummy() -> Self {
-        Token::new(TokenKind::Unknown, 0)
+        Token::new(TokenKind::Unknown, "")
     }
 }
 
-pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
+pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token<'a>> {
     let mut cursor = CharCursor::new(input);
-    std::iter::from_fn(move || match cursor.advance_token() {
-        Token {
-            kind: TokenKind::EOF,
-            ..
-        } => None,
-        tok => Some(tok),
+    std::iter::from_fn(move || {
+        cursor.start = cursor.curr;
+        match cursor.advance_token() {
+            Token {
+                kind: TokenKind::EOF,
+                ..
+            } => None,
+            tok => Some(tok),
+        }
     })
-}
-
-#[cfg(debug_assertions)]
-pub fn visualize(input: &str) {
-    use crate::lexer::debug_utils::LexerVisualizer;
-
-    let mut visualizer = LexerVisualizer::new(input);
-    println!("{}", visualizer.visualize());
 }
 
 pub fn is_horizontal_whitespace(c: Option<char>) -> bool {
@@ -105,17 +57,18 @@ fn is_newline(c: Option<char>) -> bool {
     c.is_some_and(|c| c == '\n')
 }
 
-impl CharCursor<'_> {
-    pub fn advance_token(&mut self) -> Token {
+impl<'a> CharCursor<'a> {
+    pub fn advance_token(&mut self) -> Token<'a> {
         let Some(first_char) = self.advance() else {
-            return Token::new(TokenKind::EOF, 0);
+            return Token::new(TokenKind::EOF, "");
         };
 
         let token = match first_char {
             '\n' => self.newline(),
-            c if is_horizontal_whitespace(Some(c)) => self.whitespace(c),
+            c if is_horizontal_whitespace(Some(c)) => self.whitespace(),
             '+' if self.as_str().starts_with("++") => self.metadata(),
             '!' => TokenKind::Bang,
+            ',' => TokenKind::Comma,
             '@' => TokenKind::At,
             '{' => TokenKind::OpenCurly,
             '}' => TokenKind::CloseCurly,
@@ -127,14 +80,12 @@ impl CharCursor<'_> {
             _ => self.text(),
         };
 
-        let res = Token::new(token, self.token_pos());
-        self.reset_token_pos();
-        res
+        Token::new(token, self.lexeme())
     }
 
-    fn whitespace(&mut self, c: char) -> TokenKind {
+    fn whitespace(&mut self) -> TokenKind {
         self.eat_while(is_horizontal_whitespace);
-        TokenKind::Whitespace(Whitespace::from(c))
+        TokenKind::Whitespace
     }
 
     fn newline(&mut self) -> TokenKind {
@@ -172,73 +123,6 @@ impl CharCursor<'_> {
     }
 }
 
-#[cfg(any(test, debug_assertions))]
-mod debug_utils {
-    use super::*;
-
-    fn tokenkind_to_str(kind: TokenKind) -> &'static str {
-        match kind {
-            TokenKind::MetadataMarker => "METAMARKER",
-            TokenKind::Bang => "BANG",
-            TokenKind::At => "AT",
-            TokenKind::OpenCurly => "OPENCURLY",
-            TokenKind::CloseCurly => "CLOSECURLY",
-            TokenKind::OpenBrace => "OPENBRACE",
-            TokenKind::CloseBrace => "CLOSEBRACE",
-            TokenKind::Equals => "EQUALS",
-            TokenKind::Percent => "PERCENT",
-            TokenKind::Text => "TEXT",
-            TokenKind::Newline => "",
-            TokenKind::Whitespace(c) => c.into(),
-            TokenKind::EOF => "EOF",
-            TokenKind::Unknown => "UNKNOWN",
-        }
-    }
-
-    fn print_token<'a>(token: &'a Token, tester: &'a LexerVisualizer) -> String {
-        format!(
-            "{} {}..{} \"{}\" ",
-            tokenkind_to_str(token.kind),
-            tester.pos,
-            tester.pos + token.len,
-            &tester.input[tester.pos..tester.pos + token.len]
-        )
-    }
-
-    pub struct LexerVisualizer<'a> {
-        input: &'a str,
-        tokens: Vec<Token>,
-        pos: usize,
-    }
-
-    impl<'a> LexerVisualizer<'a> {
-        pub fn new(input: &'a str) -> Self {
-            let tokens = tokenize(input).collect();
-
-            Self {
-                input,
-                tokens,
-                pos: 0,
-            }
-        }
-
-        pub fn visualize(&mut self) -> String {
-            let mut buf = String::new();
-
-            for tok in &self.tokens {
-                match tok.kind {
-                    TokenKind::Newline => buf.push('\n'),
-                    TokenKind::Whitespace(c) => buf.push(c.into()),
-                    _ => buf.push_str(&print_token(tok, self)),
-                }
-                self.pos += tok.len;
-            }
-
-            buf
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -258,12 +142,5 @@ With a @bold[body]
         let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
         assert!(!tokens.is_empty());
         insta::assert_debug_snapshot!(tokens);
-    }
-
-    #[test]
-    fn it_looks_correct() {
-        let mut tester = debug_utils::LexerVisualizer::new(TEST_INPUT);
-        let res = tester.visualize();
-        insta::assert_snapshot!(res);
     }
 }

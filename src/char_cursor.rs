@@ -2,8 +2,10 @@ use std::str::Chars;
 
 #[derive(Debug)]
 pub struct CharCursor<'a> {
-    pub len_remaining: usize,
+    pub curr: usize,
+    pub start: usize,
     pub chars: Chars<'a>,
+    pub source: &'a str,
     #[cfg(debug_assertions)]
     pub prev: Option<char>,
 }
@@ -11,8 +13,10 @@ pub struct CharCursor<'a> {
 impl<'a> CharCursor<'a> {
     pub fn new(input: &'a str) -> Self {
         CharCursor {
-            len_remaining: input.len(),
+            curr: 0,
+            start: 0,
             chars: input.chars(),
+            source: input,
             prev: None,
         }
     }
@@ -33,15 +37,12 @@ impl<'a> CharCursor<'a> {
         self.chars.as_str().is_empty()
     }
 
-    pub fn token_pos(&self) -> usize {
-        self.len_remaining - self.as_str().len()
-    }
-
-    pub fn reset_token_pos(&mut self) {
-        self.len_remaining = self.as_str().len();
+    pub fn lexeme(&self) -> &'a str {
+        &self.source[self.start..self.curr]
     }
 
     pub fn advance(&mut self) -> Option<char> {
+        self.curr += 1;
         let c = self.chars.next();
 
         #[cfg(debug_assertions)]
@@ -50,10 +51,6 @@ impl<'a> CharCursor<'a> {
         }
 
         c
-    }
-
-    pub fn advance_nth(&mut self, n: usize) {
-        self.chars = self.as_str()[n..].chars();
     }
 
     pub fn eat_while(&mut self, mut predicate: impl FnMut(Option<char>) -> bool) {

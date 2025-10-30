@@ -5,40 +5,20 @@ expression: blocks
 [
     Newline,
     Metadata(
-        [
-            Token {
-                kind: Newline,
-                len: 1,
-            },
-            Token {
-                kind: Text,
-                len: 8,
-            },
-            Token {
-                kind: Whitespace(
-                    Space,
+        "\nmetadata = things\n",
+    ),
+    Block {
+        name: "h1",
+        attributes: [
+            Attribute {
+                name: "some",
+                value: String(
+                    "value",
                 ),
-                len: 1,
-            },
-            Token {
-                kind: Equals,
-                len: 1,
-            },
-            Token {
-                kind: Whitespace(
-                    Space,
-                ),
-                len: 1,
-            },
-            Token {
-                kind: Text,
-                len: 6,
-            },
-            Token {
-                kind: Newline,
-                len: 1,
             },
         ],
-    ),
+        body: [],
+    },
+    Whitespace,
     Newline,
 ]

@@ -1,23 +1,35 @@
 use crate::{
-    lexer::{Token, TokenKind, Whitespace},
+    lexer::{Token, TokenKind},
     token_cursor::TokenCursor,
 };
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum AttributeValue<'a> {
+    String(&'a str),
+    Boolean,
+}
+
 #[derive(Debug)]
-pub enum Block {
-    Metadata(Vec<Token>),
+pub struct Attribute<'a> {
+    name: &'a str,
+    value: AttributeValue<'a>,
+}
+
+#[derive(Debug)]
+pub enum Block<'a> {
+    Metadata(String),
     Block {
-        name: Token,
-        attributes: Vec<Token>,
-        body: Vec<Token>,
+        name: &'a str,
+        attributes: Vec<Attribute<'a>>,
+        body: Vec<&'a str>,
     },
-    Whitespace(Whitespace),
+    Whitespace,
     Newline,
     Unknown,
     EOF,
 }
 
-pub fn parse(input: Vec<Token>) -> Vec<Block> {
+pub fn parse<'a>(input: Vec<Token<'a>>) -> Vec<Block<'a>> {
     let mut cursor = TokenCursor::new(input);
     let mut res = Vec::new();
 
@@ -36,15 +48,15 @@ pub fn parse(input: Vec<Token>) -> Vec<Block> {
     res
 }
 
-impl TokenCursor {
-    pub fn advance_token(&mut self) -> Block {
+impl<'a> TokenCursor<'a> {
+    pub fn advance_token(&mut self) -> Block<'a> {
         let first_token = self.advance();
 
         let block = match first_token.kind {
             TokenKind::MetadataMarker => self.parse_metadata(),
             TokenKind::EOF => Block::EOF,
             TokenKind::Unknown => Block::Unknown,
-            TokenKind::Whitespace(c) => Block::Whitespace(c),
+            TokenKind::Whitespace => Block::Whitespace,
             TokenKind::Newline => match self.peek_kind() {
                 Some(TokenKind::Bang) => self.parse_block(),
                 _ => Block::Newline,
@@ -67,27 +79,29 @@ impl TokenCursor {
         block
     }
 
-    fn parse_metadata(&mut self) -> Block {
+    fn parse_metadata(&mut self) -> Block<'a> {
         let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::MetadataMarker));
         debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
         self.advance();
 
+        let body = body.iter().map(|t| t.lexeme).collect();
+
         Block::Metadata(body)
     }
 
-    fn parse_block(&mut self) -> Block {
+    fn parse_block(&mut self) -> Block<'a> {
         debug_assert!(self.peek_kind() == Some(TokenKind::Bang));
         self.advance();
 
         debug_assert!(self.peek_kind() == Some(TokenKind::Text));
-        let name = self.advance();
+        let name = self.advance().lexeme;
 
         let attributes = if self.peek_kind() == Some(TokenKind::OpenCurly) {
             self.advance();
-            let attrs = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::CloseCurly));
+            let attrs = parse_attribute(self);
             debug_assert!(self.peek_kind() == Some(TokenKind::CloseCurly));
             self.advance();
-            attrs
+            vec![attrs]
         } else {
             vec![]
         };
@@ -102,9 +116,31 @@ impl TokenCursor {
         Block::Block {
             name,
             attributes,
-            body,
+            body: vec![],
         }
     }
+}
+
+fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
+    let name = cursor
+        .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
+        .lexeme;
+
+    let value = match cursor.peek_kind() {
+        Some(TokenKind::Comma) => AttributeValue::Boolean,
+        Some(TokenKind::Equals) => {
+            cursor.advance();
+            AttributeValue::String(
+                cursor
+                    .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
+                    .lexeme,
+            )
+        }
+        Some(_) => panic!("invalid attribute value"),
+        None => AttributeValue::Boolean,
+    };
+
+    Attribute { name, value }
 }
 
 #[cfg(test)]
@@ -127,5 +163,20 @@ With a @bold[body]
         let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
         let blocks = parse(tokens);
         insta::assert_debug_snapshot!(blocks);
+    }
+
+    #[test]
+    fn test_parse_attributes() {
+        let attributes = vec![
+            ("name", AttributeValue::Boolean),
+            ("name2=value", AttributeValue::String("value")),
+        ];
+        for (attr, expected) in attributes {
+            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let mut cursor = TokenCursor::new(lexer);
+            let res = parse_attribute(&mut cursor);
+
+            assert_eq!(res.value, expected);
+        }
     }
 }

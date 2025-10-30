@@ -1,9 +1,0 @@
----
-source: src/lexer.rs
-expression: res
----
-METAMARKER 1..4 "+++" 
-TEXT 5..13 "metadata"  EQUALS 14..15 "="  TEXT 16..22 "things" 
-METAMARKER 23..26 "+++" 
-BANG 28..29 "!" TEXT 29..31 "h1" OPENCURLY 31..32 "{" TEXT 32..36 "some" EQUALS 36..37 "=" TEXT 37..42 "value" CLOSECURLY 42..43 "}" OPENBRACE 43..44 "[" TEXT 44..50 "Header" CLOSEBRACE 50..51 "]"  
-TEXT 54..58 "With"  TEXT 59..60 "a"  AT 61..62 "@" TEXT 62..66 "bold" OPENBRACE 66..67 "[" TEXT 67..71 "body" CLOSEBRACE 71..72 "]"

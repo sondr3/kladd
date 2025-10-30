@@ -5,150 +5,138 @@ expression: tokens
 [
     Token {
         kind: Newline,
-        len: 1,
+        lexeme: "\n",
     },
     Token {
         kind: MetadataMarker,
-        len: 3,
+        lexeme: "+++",
     },
     Token {
         kind: Newline,
-        len: 1,
+        lexeme: "\n",
     },
     Token {
         kind: Text,
-        len: 8,
+        lexeme: "metadata",
     },
     Token {
-        kind: Whitespace(
-            Space,
-        ),
-        len: 1,
+        kind: Whitespace,
+        lexeme: " ",
     },
     Token {
         kind: Equals,
-        len: 1,
+        lexeme: "=",
     },
     Token {
-        kind: Whitespace(
-            Space,
-        ),
-        len: 1,
+        kind: Whitespace,
+        lexeme: " ",
     },
     Token {
         kind: Text,
-        len: 6,
+        lexeme: "things",
     },
     Token {
         kind: Newline,
-        len: 1,
+        lexeme: "\n",
     },
     Token {
         kind: MetadataMarker,
-        len: 3,
+        lexeme: "+++",
     },
     Token {
         kind: Newline,
-        len: 2,
+        lexeme: "\n\n",
     },
     Token {
         kind: Bang,
-        len: 1,
+        lexeme: "!",
     },
     Token {
         kind: Text,
-        len: 2,
+        lexeme: "h1",
     },
     Token {
         kind: OpenCurly,
-        len: 1,
+        lexeme: "{",
     },
     Token {
         kind: Text,
-        len: 4,
+        lexeme: "some",
     },
     Token {
         kind: Equals,
-        len: 1,
+        lexeme: "=",
     },
     Token {
         kind: Text,
-        len: 5,
+        lexeme: "value",
     },
     Token {
         kind: CloseCurly,
-        len: 1,
+        lexeme: "}",
     },
     Token {
         kind: OpenBrace,
-        len: 1,
+        lexeme: "[",
     },
     Token {
         kind: Text,
-        len: 6,
+        lexeme: "Header",
     },
     Token {
         kind: CloseBrace,
-        len: 1,
+        lexeme: "]",
     },
     Token {
-        kind: Whitespace(
-            Space,
-        ),
-        len: 1,
+        kind: Whitespace,
+        lexeme: " ",
     },
     Token {
         kind: Newline,
-        len: 2,
+        lexeme: "\n\n",
     },
     Token {
         kind: Text,
-        len: 4,
+        lexeme: "With",
     },
     Token {
-        kind: Whitespace(
-            Space,
-        ),
-        len: 1,
+        kind: Whitespace,
+        lexeme: " ",
     },
     Token {
         kind: Text,
-        len: 1,
+        lexeme: "a",
     },
     Token {
-        kind: Whitespace(
-            Space,
-        ),
-        len: 1,
+        kind: Whitespace,
+        lexeme: " ",
     },
     Token {
         kind: At,
-        len: 1,
+        lexeme: "@",
     },
     Token {
         kind: Text,
-        len: 4,
+        lexeme: "bold",
     },
     Token {
         kind: OpenBrace,
-        len: 1,
+        lexeme: "[",
     },
     Token {
         kind: Text,
-        len: 4,
+        lexeme: "body",
     },
     Token {
         kind: CloseBrace,
-        len: 1,
+        lexeme: "]",
     },
     Token {
         kind: Newline,
-        len: 1,
+        lexeme: "\n",
     },
     Token {
-        kind: Whitespace(
-            Space,
-        ),
-        len: 1,
+        kind: Whitespace,
+        lexeme: " ",
     },
 ]
