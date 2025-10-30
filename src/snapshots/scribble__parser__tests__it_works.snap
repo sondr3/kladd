@@ -3,7 +3,6 @@ source: src/parser.rs
 expression: blocks
 ---
 [
-    Newline,
     Metadata(
         "\nmetadata = things\n",
     ),

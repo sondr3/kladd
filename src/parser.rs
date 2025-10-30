@@ -62,6 +62,10 @@ pub fn parse<'a>(input: Vec<Token<'a>>) -> Vec<Block<'a>> {
     let mut cursor = TokenCursor::new(input);
     let mut res = Vec::new();
 
+    cursor.eat_while(|t| {
+        t.is_some_and(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace))
+    });
+
     if cursor
         .peek()
         .is_some_and(|t| t.kind == TokenKind::MetadataMarker)
@@ -82,7 +86,6 @@ impl<'a> TokenCursor<'a> {
         let first_token = self.advance();
 
         match first_token.kind {
-            TokenKind::MetadataMarker => self.parse_metadata(),
             TokenKind::EOF => Block::EOF,
             TokenKind::Unknown => Block::Unknown,
             TokenKind::Whitespace => Block::Whitespace,
@@ -108,6 +111,9 @@ impl<'a> TokenCursor<'a> {
     }
 
     fn parse_metadata(&mut self) -> Block<'a> {
+        debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
+        self.advance();
+
         let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::MetadataMarker));
         debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
         self.advance();

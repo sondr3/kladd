@@ -133,9 +133,8 @@ impl<'a> CharCursor<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::test_utils::TEST_INPUT;
-
     use super::*;
+    use crate::test_utils::test_utils::TEST_INPUT;
 
     #[test]
     fn it_works() {
