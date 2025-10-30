@@ -11,17 +11,46 @@ pub enum AttributeValue<'a> {
 
 #[derive(Debug)]
 pub struct Attribute<'a> {
-    name: &'a str,
-    value: AttributeValue<'a>,
+    pub name: &'a str,
+    pub value: AttributeValue<'a>,
 }
 
 #[derive(Debug)]
 pub enum Block<'a> {
+    /// A block of TOML data
     Metadata(String),
+    /// A !h1{attribute=value}[content] block
     Block {
         name: &'a str,
         attributes: Vec<Attribute<'a>>,
-        body: Vec<&'a str>,
+        body: Vec<Block<'a>>,
+    },
+    /// A @bold[content] inline block
+    Inline {
+        name: &'a str,
+        attributes: Vec<Attribute<'a>>,
+        body: Vec<Block<'a>>,
+    },
+    /// A @{key=value}[content] block
+    NakedInline {
+        attributes: Vec<Attribute<'a>>,
+        body: Vec<Block<'a>>,
+    },
+    /// A {/italic/} or {* bold *} simple inline node etc
+    SimpleInline {
+        name: &'a str,
+        body: Box<Block<'a>>,
+    },
+    TextBlock {
+        body: Vec<Block<'a>>,
+    },
+    /// A single pure text node
+    Text {
+        body: &'a str,
+    },
+    /// A {% comment %} comment
+    Comment {
+        body: String,
     },
     Whitespace,
     Newline,
@@ -52,7 +81,7 @@ impl<'a> TokenCursor<'a> {
     pub fn advance_token(&mut self) -> Block<'a> {
         let first_token = self.advance();
 
-        let block = match first_token.kind {
+        match first_token.kind {
             TokenKind::MetadataMarker => self.parse_metadata(),
             TokenKind::EOF => Block::EOF,
             TokenKind::Unknown => Block::Unknown,
@@ -60,6 +89,10 @@ impl<'a> TokenCursor<'a> {
             TokenKind::Newline => match self.peek_kind() {
                 Some(TokenKind::Bang) => self.parse_block(),
                 _ => Block::Newline,
+            },
+            TokenKind::OpenCurly => match self.peek_kind() {
+                Some(TokenKind::Percent) => self.parse_comment(),
+                _ => self.parse_simple_inline(),
             },
             _ => Block::Unknown,
             // crate::lexer::TokenKind::Bang => todo!(),
@@ -71,12 +104,7 @@ impl<'a> TokenCursor<'a> {
             // crate::lexer::TokenKind::Equals => todo!(),
             // crate::lexer::TokenKind::Percent => todo!(),
             // crate::lexer::TokenKind::Text => todo!(),
-            // crate::lexer::TokenKind::Newline => todo!(),
-            // crate::lexer::TokenKind::EOF => todo!(),
-            // crate::lexer::TokenKind::Unknown => todo!(),
-        };
-
-        block
+        }
     }
 
     fn parse_metadata(&mut self) -> Block<'a> {
@@ -109,7 +137,7 @@ impl<'a> TokenCursor<'a> {
         debug_assert!(self.peek_kind() == Some(TokenKind::OpenBrace));
         self.advance();
 
-        let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::CloseBrace));
+        let _body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::CloseBrace));
         debug_assert!(self.peek_kind() == Some(TokenKind::CloseBrace));
         self.advance();
 
@@ -117,6 +145,52 @@ impl<'a> TokenCursor<'a> {
             name,
             attributes,
             body: vec![],
+        }
+    }
+
+    fn parse_comment(&mut self) -> Block<'a> {
+        debug_assert!(self.peek_kind() == Some(TokenKind::Percent));
+        self.advance();
+
+        let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::Percent));
+        self.advance();
+        debug_assert!(self.peek_kind() == Some(TokenKind::CloseCurly));
+        self.advance();
+
+        Block::Comment {
+            body: body.iter().map(|c| c.lexeme).collect::<String>(),
+        }
+    }
+
+    fn parse_simple_inline(&mut self) -> Block<'a> {
+        let (t, name) = match self.peek_kind() {
+            Some(t @ TokenKind::Slash) => (t, "italic"),
+            Some(t @ TokenKind::Star) => (t, "bold"),
+            Some(t @ TokenKind::Underscore) => (t, "underline"),
+            Some(t @ TokenKind::Equals) => (t, "highlight"),
+            Some(t @ TokenKind::Dash) => (t, "strikethrough"),
+            _ => panic!("invalid short inline"),
+        };
+
+        self.advance();
+
+        let body = Box::new(self.parse_text());
+
+        debug_assert!(self.peek_kind() == Some(t));
+        self.advance();
+        debug_assert!(self.peek_kind() == Some(TokenKind::CloseCurly));
+        self.advance();
+
+        Block::SimpleInline { name, body }
+    }
+
+    fn parse_text(&mut self) -> Block<'a> {
+        let body = self.eat_while(|t| t.is_some_and(|i| i.kind == TokenKind::Text));
+        Block::TextBlock {
+            body: body
+                .iter()
+                .map(|f| Block::Text { body: f.lexeme })
+                .collect(),
         }
     }
 }
@@ -146,17 +220,7 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexer::tokenize;
-
-    const TEST_INPUT: &'static str = r#"
-+++
-metadata = things
-+++
-
-!h1{some=value}[Header] 
-
-With a @bold[body]
- "#;
+    use crate::{lexer::tokenize, test_utils::test_utils::TEST_INPUT};
 
     #[test]
     fn it_works() {

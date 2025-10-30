@@ -48,6 +48,66 @@ expression: tokens
         lexeme: "\n\n",
     },
     Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Percent,
+        lexeme: "%",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "comment",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Percent,
+        lexeme: "%",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n\n",
+    },
+    Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Star,
+        lexeme: "*",
+    },
+    Token {
+        kind: Text,
+        lexeme: "bold",
+    },
+    Token {
+        kind: Star,
+        lexeme: "*",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n\n",
+    },
+    Token {
         kind: Bang,
         lexeme: "!",
     },
@@ -130,6 +190,46 @@ expression: tokens
     Token {
         kind: CloseBrace,
         lexeme: "]",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "and",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+    },
+    Token {
+        kind: Text,
+        lexeme: "italic",
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "content",
     },
     Token {
         kind: Newline,

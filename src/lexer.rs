@@ -10,6 +10,10 @@ pub enum TokenKind {
     OpenBrace,
     CloseBrace,
     Equals,
+    Slash,
+    Star,
+    Underscore,
+    Dash,
     Percent,
     Comma,
     Text,
@@ -75,6 +79,10 @@ impl<'a> CharCursor<'a> {
             '[' => TokenKind::OpenBrace,
             ']' => TokenKind::CloseBrace,
             '=' => TokenKind::Equals,
+            '/' => TokenKind::Slash,
+            '*' => TokenKind::Star,
+            '_' => TokenKind::Underscore,
+            '-' => TokenKind::Dash,
             '%' => TokenKind::Percent,
             '"' => self.quoted_text(),
             _ => self.text(),
@@ -125,17 +133,9 @@ impl<'a> CharCursor<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_utils::test_utils::TEST_INPUT;
+
     use super::*;
-
-    const TEST_INPUT: &'static str = r#"
-+++
-metadata = things
-+++
-
-!h1{some=value}[Header] 
-
-With a @bold[body]
- "#;
 
     #[test]
     fn it_works() {

@@ -7,6 +7,22 @@ expression: blocks
     Metadata(
         "\nmetadata = things\n",
     ),
+    Newline,
+    Comment {
+        body: " comment ",
+    },
+    Newline,
+    SimpleInline {
+        name: "bold",
+        body: TextBlock {
+            body: [
+                Text {
+                    body: "bold",
+                },
+            ],
+        },
+    },
+    Whitespace,
     Block {
         name: "h1",
         attributes: [
