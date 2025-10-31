@@ -6,22 +6,31 @@ expression: blocks
     Metadata(
         "\nmetadata = things\n",
     ),
-    Newline,
     Comment {
-        body: " comment ",
+        body: " this is a comment",
     },
-    Newline,
-    SimpleInline {
-        name: "bold",
-        body: TextBlock {
-            body: [
-                Text {
-                    body: "bold",
-                },
-            ],
-        },
+    Container {
+        body: [
+            SimpleInline {
+                name: "bold",
+                body: [
+                    Text(
+                        "bold",
+                    ),
+                    Whitespace,
+                    SimpleInline {
+                        name: "italic",
+                        body: [
+                            Text(
+                                "italic",
+                            ),
+                        ],
+                    },
+                ],
+            },
+            Whitespace,
+        ],
     },
-    Whitespace,
     Block {
         name: "h1",
         attributes: [
@@ -41,5 +50,47 @@ expression: blocks
         body: [],
     },
     Whitespace,
-    Newline,
+    Container {
+        body: [
+            Text(
+                "With",
+            ),
+            Whitespace,
+            Text(
+                "a",
+            ),
+            Whitespace,
+            Inline {
+                name: "bold",
+                attributes: [],
+                body: [
+                    Text(
+                        "body",
+                    ),
+                ],
+            },
+            Whitespace,
+            Text(
+                "and",
+            ),
+            Whitespace,
+            SimpleInline {
+                name: "italic",
+                body: [
+                    Text(
+                        "italic",
+                    ),
+                ],
+            },
+            Whitespace,
+            Text(
+                "content",
+            ),
+        ],
+    },
+    Container {
+        body: [
+            Whitespace,
+        ],
+    },
 ]

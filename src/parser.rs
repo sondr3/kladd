@@ -39,7 +39,7 @@ pub enum Block<'a> {
     /// A {/italic/} or {* bold *} simple inline node etc
     SimpleInline {
         name: &'a str,
-        body: Box<Block<'a>>,
+        body: Vec<Block<'a>>,
     },
     Container {
         body: Vec<Block<'a>>,
@@ -81,20 +81,28 @@ pub fn parse<'a>(input: Vec<Token<'a>>) -> Vec<Block<'a>> {
 
 impl<'a> TokenCursor<'a> {
     pub fn advance_token(&mut self) -> Block<'a> {
-        let first_token = self.advance();
-
-        match first_token.kind {
-            TokenKind::EOF => Block::EOF,
-            TokenKind::Unknown => Block::Unknown,
-            TokenKind::Whitespace => Block::Whitespace,
-            TokenKind::Newline => match self.peek_kind() {
-                Some(TokenKind::Bang) => self.parse_block(),
-                Some(TokenKind::Dash) => self.parse_comment(),
-                _ => self.parse_container(),
-            },
-            TokenKind::OpenCurly => match self.peek_kind() {
-                _ => self.parse_container(),
-            },
+        match self.peek_kind() {
+            Some(TokenKind::EOF) => {
+                self.advance();
+                Block::EOF
+            }
+            Some(TokenKind::Unknown) => {
+                self.advance();
+                Block::Unknown
+            }
+            Some(TokenKind::Whitespace) => {
+                self.advance();
+                Block::Whitespace
+            }
+            Some(TokenKind::Newline) => {
+                self.advance();
+                match self.peek_kind() {
+                    Some(TokenKind::Bang) => self.parse_block(),
+                    Some(TokenKind::Dash) => self.parse_comment(),
+                    _ => self.parse_container(),
+                }
+            }
+            Some(TokenKind::OpenCurly) => self.parse_container(),
             _ => Block::Unknown,
         }
     }
@@ -140,7 +148,13 @@ impl<'a> TokenCursor<'a> {
     }
 
     fn parse_container(&mut self) -> Block<'a> {
-        let body = parse_text(self);
+        let mut body = Vec::new();
+        while !matches!(self.peek_kind(), Some(TokenKind::Newline | TokenKind::EOF)) {
+            match parse_text(self) {
+                Some(b) => body.push(b),
+                None => break,
+            }
+        }
         Block::Container { body }
     }
 
@@ -160,6 +174,9 @@ impl<'a> TokenCursor<'a> {
     }
 
     fn parse_simple_inline(&mut self) -> Block<'a> {
+        debug_assert!(self.peek_kind() == Some(TokenKind::OpenCurly));
+        self.advance();
+
         let (t, name) = match self.peek_kind() {
             Some(t @ TokenKind::Slash) => (t, "italic"),
             Some(t @ TokenKind::Star) => (t, "bold"),
@@ -171,7 +188,13 @@ impl<'a> TokenCursor<'a> {
 
         self.advance();
 
-        let body = Box::new(self.parse_text());
+        let mut body = Vec::new();
+        while self.peek_kind() != Some(t) && !self.is_at_end() {
+            match parse_text(self) {
+                Some(b) => body.push(b),
+                None => break,
+            }
+        }
 
         debug_assert!(self.peek_kind() == Some(t));
         self.advance();
@@ -180,27 +203,26 @@ impl<'a> TokenCursor<'a> {
 
         Block::SimpleInline { name, body }
     }
-
-    fn parse_text(&mut self) -> Block<'a> {
-        let body = self.eat_while(|t| t.is_some_and(|i| i.kind == TokenKind::Text));
-        Block::Container {
-            body: body.iter().map(|f| Block::Text(f.lexeme)).collect(),
-        }
-    }
 }
 
-fn parse_text<'a>(cursor: &mut TokenCursor<'a>) -> Vec<Block<'a>> {
-    let mut res = Vec::new();
-
-    match dbg!(cursor.peek_kind()) {
-        Some(TokenKind::Text) => res.push(Block::Text(cursor.advance().lexeme)),
-        Some(TokenKind::At) => res.push(parse_inline(cursor)),
-        Some(TokenKind::OpenCurly) => res.push(cursor.parse_simple_inline()),
-        Some(TokenKind::Newline) => return res,
-        _ => todo!(),
-    };
-
-    res
+fn parse_text<'a>(cursor: &mut TokenCursor<'a>) -> Option<Block<'a>> {
+    match cursor.peek_kind() {
+        Some(TokenKind::Text) => Some(Block::Text(cursor.advance().lexeme)),
+        Some(TokenKind::At) => Some(parse_inline(cursor)),
+        Some(TokenKind::OpenCurly) => Some(cursor.parse_simple_inline()),
+        Some(TokenKind::Whitespace) => {
+            cursor.advance();
+            Some(Block::Whitespace)
+        }
+        Some(TokenKind::Newline) => {
+            cursor.advance();
+            Some(Block::Newline)
+        }
+        None => None,
+        _ => {
+            panic!("{:?} not yet handled in text", cursor.peek_kind());
+        }
+    }
 }
 
 fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> Block<'a> {
@@ -209,24 +231,40 @@ fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> Block<'a> {
 
     let name = match cursor.peek_kind() {
         Some(TokenKind::Text) => Some(cursor.advance().lexeme),
-        Some(TokenKind::OpenCurly) => None,
+        Some(TokenKind::OpenCurly | TokenKind::OpenBrace) => None,
         _ => panic!("invalid inline item"),
     };
 
-    let attrs = parse_attributes(cursor);
+    let attrs = if matches!(cursor.peek_kind(), Some(TokenKind::OpenCurly)) {
+        parse_attributes(cursor)
+    } else {
+        vec![]
+    };
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
+    cursor.advance();
+
+    let mut body = Vec::new();
+    while cursor.peek_kind() != Some(TokenKind::CloseBrace) && !cursor.is_at_end() {
+        match parse_text(cursor) {
+            Some(b) => body.push(b),
+            None => break,
+        }
+    }
+
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
+    cursor.advance();
 
     if let Some(name) = name {
         Block::Inline {
             name,
             attributes: attrs,
-            body: vec![],
+            body,
         }
     } else {
         Block::NakedInline {
             attributes: attrs,
-            body: vec![],
+            body,
         }
     }
 }

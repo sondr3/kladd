@@ -33,6 +33,10 @@ impl<'a> TokenCursor<'a> {
         t
     }
 
+    pub fn is_at_end(&self) -> bool {
+        self.peek_kind() == Some(TokenKind::EOF)
+    }
+
     pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token<'a>>) -> bool) -> Token<'a> {
         debug_assert!(pred(self.peek()));
         if pred(self.peek()) {
@@ -48,7 +52,7 @@ impl<'a> TokenCursor<'a> {
     ) -> Vec<Token<'a>> {
         let mut res = Vec::new();
 
-        while predicate(self.peek()) {
+        while predicate(self.peek()) && !self.is_at_end() {
             res.push(self.advance());
         }
 
