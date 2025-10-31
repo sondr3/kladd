@@ -48,12 +48,36 @@ expression: tokens
         lexeme: "\n\n",
     },
     Token {
-        kind: OpenCurly,
-        lexeme: "{",
+        kind: Dash,
+        lexeme: "-",
     },
     Token {
-        kind: Percent,
-        lexeme: "%",
+        kind: Dash,
+        lexeme: "-",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "this",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "is",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "a",
     },
     Token {
         kind: Whitespace,
@@ -62,18 +86,6 @@ expression: tokens
     Token {
         kind: Text,
         lexeme: "comment",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
-    },
-    Token {
-        kind: Percent,
-        lexeme: "%",
-    },
-    Token {
-        kind: CloseCurly,
-        lexeme: "}",
     },
     Token {
         kind: Newline,
@@ -90,6 +102,30 @@ expression: tokens
     Token {
         kind: Text,
         lexeme: "bold",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+    },
+    Token {
+        kind: Text,
+        lexeme: "italic",
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
     },
     Token {
         kind: Star,

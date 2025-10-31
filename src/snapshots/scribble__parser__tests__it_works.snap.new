@@ -1,0 +1,13 @@
+---
+source: src/parser.rs
+assertion_line: 250
+expression: blocks
+---
+[
+    Metadata(
+        "\nmetadata = things\n",
+    ),
+    Comment {
+        body: " this is a comment",
+    },
+]

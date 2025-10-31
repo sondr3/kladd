@@ -5,9 +5,9 @@ pub mod test_utils {
 metadata = things
 +++
 
-{% comment %}
+-- this is a comment
 
-{*bold*} 
+{*bold {/italic/}*} 
 
 !h1{some=value,other=value2}[Header] 
 

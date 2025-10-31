@@ -47,3 +47,7 @@ fn main() {
 }
 ]
 ```
+
+## Comments 
+
+Comments can only be on a line-by-line basis, and are prefixed by `--`.

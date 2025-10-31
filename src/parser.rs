@@ -41,13 +41,11 @@ pub enum Block<'a> {
         name: &'a str,
         body: Box<Block<'a>>,
     },
-    TextBlock {
+    Container {
         body: Vec<Block<'a>>,
     },
     /// A single pure text node
-    Text {
-        body: &'a str,
-    },
+    Text(&'a str),
     /// A {% comment %} comment
     Comment {
         body: String,
@@ -91,22 +89,13 @@ impl<'a> TokenCursor<'a> {
             TokenKind::Whitespace => Block::Whitespace,
             TokenKind::Newline => match self.peek_kind() {
                 Some(TokenKind::Bang) => self.parse_block(),
-                _ => Block::Newline,
+                Some(TokenKind::Dash) => self.parse_comment(),
+                _ => self.parse_container(),
             },
             TokenKind::OpenCurly => match self.peek_kind() {
-                Some(TokenKind::Percent) => self.parse_comment(),
-                _ => self.parse_simple_inline(),
+                _ => self.parse_container(),
             },
             _ => Block::Unknown,
-            // crate::lexer::TokenKind::Bang => todo!(),
-            // crate::lexer::TokenKind::At => todo!(),
-            // crate::lexer::TokenKind::OpenCurly => todo!(),
-            // crate::lexer::TokenKind::CloseCurly => todo!(),
-            // crate::lexer::TokenKind::OpenBrace => todo!(),
-            // crate::lexer::TokenKind::CloseBrace => todo!(),
-            // crate::lexer::TokenKind::Equals => todo!(),
-            // crate::lexer::TokenKind::Percent => todo!(),
-            // crate::lexer::TokenKind::Text => todo!(),
         }
     }
 
@@ -150,13 +139,19 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
+    fn parse_container(&mut self) -> Block<'a> {
+        let body = parse_text(self);
+        Block::Container { body }
+    }
+
     fn parse_comment(&mut self) -> Block<'a> {
-        debug_assert!(self.peek_kind() == Some(TokenKind::Percent));
+        debug_assert!(self.peek_kind() == Some(TokenKind::Dash));
         self.advance();
 
-        let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::Percent));
+        debug_assert!(self.peek_kind() == Some(TokenKind::Dash));
         self.advance();
-        debug_assert!(self.peek_kind() == Some(TokenKind::CloseCurly));
+
+        let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::Newline));
         self.advance();
 
         Block::Comment {
@@ -188,11 +183,50 @@ impl<'a> TokenCursor<'a> {
 
     fn parse_text(&mut self) -> Block<'a> {
         let body = self.eat_while(|t| t.is_some_and(|i| i.kind == TokenKind::Text));
-        Block::TextBlock {
-            body: body
-                .iter()
-                .map(|f| Block::Text { body: f.lexeme })
-                .collect(),
+        Block::Container {
+            body: body.iter().map(|f| Block::Text(f.lexeme)).collect(),
+        }
+    }
+}
+
+fn parse_text<'a>(cursor: &mut TokenCursor<'a>) -> Vec<Block<'a>> {
+    let mut res = Vec::new();
+
+    match dbg!(cursor.peek_kind()) {
+        Some(TokenKind::Text) => res.push(Block::Text(cursor.advance().lexeme)),
+        Some(TokenKind::At) => res.push(parse_inline(cursor)),
+        Some(TokenKind::OpenCurly) => res.push(cursor.parse_simple_inline()),
+        Some(TokenKind::Newline) => return res,
+        _ => todo!(),
+    };
+
+    res
+}
+
+fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> Block<'a> {
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::At));
+    cursor.advance();
+
+    let name = match cursor.peek_kind() {
+        Some(TokenKind::Text) => Some(cursor.advance().lexeme),
+        Some(TokenKind::OpenCurly) => None,
+        _ => panic!("invalid inline item"),
+    };
+
+    let attrs = parse_attributes(cursor);
+
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
+
+    if let Some(name) = name {
+        Block::Inline {
+            name,
+            attributes: attrs,
+            body: vec![],
+        }
+    } else {
+        Block::NakedInline {
+            attributes: attrs,
+            body: vec![],
         }
     }
 }
@@ -223,7 +257,7 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
         .lexeme;
 
     let value = match cursor.peek_kind() {
-        Some(TokenKind::Comma) => AttributeValue::Boolean,
+        Some(TokenKind::Comma) | None => AttributeValue::Boolean,
         Some(TokenKind::Equals) => {
             cursor.advance();
             AttributeValue::String(
@@ -233,7 +267,6 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
             )
         }
         Some(_) => panic!("invalid attribute value"),
-        None => AttributeValue::Boolean,
     };
 
     Attribute { name, value }
