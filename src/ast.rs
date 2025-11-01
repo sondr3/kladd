@@ -33,14 +33,22 @@ pub struct Attribute<'a> {
     pub value: AttributeValue<'a>,
 }
 
+impl<'a> Attribute<'a> {
+    pub fn new(name: &'a str, value: AttributeValue<'a>) -> Self {
+        Attribute { name, value }
+    }
+}
+
+pub type Attributes<'a> = Vec<Attribute<'a>>;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Node<'a, T> {
     pub node: T,
-    pub attributes: Option<Attribute<'a>>,
+    pub attributes: Option<Attributes<'a>>,
 }
 
 impl<'a, T> Node<'a, T> {
-    pub fn new(node: T, attributes: Option<Attribute<'a>>) -> Self {
+    pub fn new(node: T, attributes: Option<Attributes<'a>>) -> Self {
         Node { node, attributes }
     }
 
@@ -54,8 +62,8 @@ impl<'a, T> Node<'a, T> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct NodeBuilder<'a, T> {
-    pub node: Option<T>,
-    pub attributes: Option<Attribute<'a>>,
+    node: Option<T>,
+    attributes: Option<Attributes<'a>>,
 }
 
 impl<'a, T> Default for NodeBuilder<'a, T> {
@@ -77,7 +85,7 @@ impl<'a, T> NodeBuilder<'a, T> {
         self
     }
 
-    pub fn with_attributes(&mut self, attrs: Attribute<'a>) -> &mut Self {
+    pub fn with_attributes(&mut self, attrs: Attributes<'a>) -> &mut Self {
         self.attributes = Some(attrs);
         self
     }
@@ -94,7 +102,7 @@ impl<'a, T> NodeBuilder<'a, T> {
 pub type BlockNode<'a> = Node<'a, Block<'a>>;
 pub type Blocks<'a> = Vec<BlockNode<'a>>;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Block<'a> {
     Heading { level: u8, body: Inlines<'a> },
     Span(Inlines<'a>),

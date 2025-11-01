@@ -199,13 +199,14 @@ fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> Block<'a> {
 
 pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     match cursor.peek_kind() {
+        Some(TokenKind::Comma) => Node::new(Inline::Text(cursor.advance().lexeme), None),
         Some(TokenKind::Text) => Node::new(Inline::Text(cursor.advance().lexeme), None),
         Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
         Some(TokenKind::Whitespace) => {
             cursor.advance();
             Node::new(Inline::Softbreak, None)
         }
-        _ => todo!(),
+        t => panic!("{:?} is not yet handled", t),
     }
 }
 
@@ -282,10 +283,67 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
     Attribute { name, value }
 }
 
+fn is_heading<'a>(cursor: &mut TokenCursor<'a>) -> bool {
+    match cursor.peek() {
+        Some(Token {
+            kind: TokenKind::Bang,
+            lexeme,
+        }) => matches!(
+            *lexeme,
+            "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "title" | "section" | "subsection"
+        ),
+        _ => false,
+    }
+}
+
+fn parse_heading<'a>(cursor: &mut TokenCursor<'a>) -> BlockNode<'a> {
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::Bang));
+    cursor.advance();
+
+    let mut builder = NodeBuilder::new();
+
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::Text));
+    let level = match cursor.advance() {
+        Token {
+            kind: TokenKind::Text,
+            lexeme,
+        } => match lexeme {
+            "h1" | "title" => 1,
+            "h2" | "section" => 2,
+            "h3" | "subsection" => 3,
+            "h4" => 4,
+            "h5" => 5,
+            "h6" => 6,
+            e => panic!("{} is not a valid heading level", e),
+        },
+        t => panic!("{:?} not a valid heading name", t),
+    };
+
+    if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
+        builder.with_attributes(parse_attributes(cursor));
+    }
+
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
+    cursor.advance();
+
+    let mut body = Vec::new();
+    while cursor.peek_kind() != Some(TokenKind::CloseBrace) && !cursor.is_at_end() {
+        body.push(parse_inlines(cursor));
+    }
+
+    builder.with_node(Block::Heading { level, body });
+
+    builder.build()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::lexer::tokenize;
+
+    fn map_inlines<'a, T, const N: usize>(nodes: [T; N]) -> Vec<Node<'a, T>> {
+        nodes.into_iter().map(Node::from_node).collect()
+    }
 
     #[test]
     fn test_parse_single_inline() {
@@ -324,6 +382,42 @@ mod tests {
                 ),]),)
             ]),)
         )
+    }
+
+    #[test]
+    fn test_parse_headlines() {
+        let inputs = vec![
+            (
+                "!title[Hello, world]",
+                BlockNode::from_node(Block::Heading {
+                    level: 1,
+                    body: map_inlines([
+                        Inline::Text("Hello"),
+                        Inline::Text(","),
+                        Inline::Softbreak,
+                        Inline::Text("world"),
+                    ]),
+                }),
+            ),
+            (
+                "!h2{class=red}[Red title]",
+                BlockNode::new(
+                    Block::Heading {
+                        level: 2,
+                        body: map_inlines([Inline::Text("Red title")]),
+                    },
+                    Some(vec![Attribute::new("class", AttributeValue::String("red"))]),
+                ),
+            ),
+        ];
+
+        for (attr, expected) in inputs {
+            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let mut cursor = TokenCursor::new(lexer);
+            let res = parse_heading(&mut cursor);
+
+            assert_eq!(res, expected);
+        }
     }
 
     #[test]
