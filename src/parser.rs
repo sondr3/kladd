@@ -1,4 +1,5 @@
 use crate::{
+    ast::Document,
     lexer::{Token, TokenKind},
     token_cursor::TokenCursor,
 };
@@ -23,8 +24,6 @@ pub enum Quote {
 
 #[derive(Debug)]
 pub enum Block<'a> {
-    /// A block of TOML data
-    Metadata(String),
     /// A `!h1{attribute=value}[content]` block
     Block {
         name: &'a str,
@@ -65,62 +64,28 @@ pub enum Block<'a> {
     EOF,
 }
 
-#[derive(Debug)]
-pub struct Document<'a> {
-    pub metadata: Option<String>,
-    pub body: Vec<Block<'a>>,
-}
-
-impl<'a> Default for Document<'a> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a> Document<'a> {
-    pub fn new() -> Self {
-        Document {
-            metadata: None,
-            body: Vec::new(),
-        }
-    }
-
-    pub fn add_metadata(&mut self, metadata: Block) {
-        match metadata {
-            Block::Metadata(body) => self.metadata = Some(body),
-            _ => panic!("invalid metadata block"),
-        }
-    }
-
-    pub fn add_body(&mut self, body: &mut Vec<Block<'a>>) {
-        self.body.append(body);
-    }
-}
-
 pub fn parse<'a>(input: Vec<Token<'a>>) -> Document<'a> {
     let mut cursor = TokenCursor::new(input);
-    let mut doc = Document::new();
-    let mut body = Vec::new();
 
     cursor.eat_while(|t| {
         t.is_some_and(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace))
     });
 
-    if cursor
+    let metadata = if cursor
         .peek()
         .is_some_and(|t| t.kind == TokenKind::MetadataMarker)
     {
-        doc.add_metadata(cursor.parse_metadata());
+        Some(cursor.parse_metadata())
+    } else {
+        None
     };
 
-    body.extend(std::iter::from_fn(move || match cursor.advance_token() {
+    let body = Vec::from_iter(std::iter::from_fn(move || match cursor.advance_token() {
         Block::Unknown | Block::EOF => None,
         tok => Some(tok),
     }));
 
-    doc.add_body(&mut body);
-
-    doc
+    Document { metadata, body }
 }
 
 impl<'a> TokenCursor<'a> {
@@ -150,7 +115,7 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
-    fn parse_metadata(&mut self) -> Block<'a> {
+    fn parse_metadata(&mut self) -> String {
         debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
         self.advance();
 
@@ -158,9 +123,7 @@ impl<'a> TokenCursor<'a> {
         debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
         self.advance();
 
-        let body = body.iter().map(|t| t.lexeme).collect();
-
-        Block::Metadata(body)
+        body.iter().map(|t| t.lexeme).collect()
     }
 
     fn parse_block(&mut self) -> Block<'a> {

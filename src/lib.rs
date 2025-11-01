@@ -1,3 +1,4 @@
+pub mod ast;
 pub mod char_cursor;
 pub mod html;
 pub mod lexer;

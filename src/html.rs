@@ -1,4 +1,4 @@
-use crate::parser::{Block, Document};
+use crate::{ast::Document, parser::Block};
 
 pub fn to_html(Document { body, .. }: Document) -> String {
     let mut res = String::new();
@@ -70,7 +70,6 @@ fn htmlify_block(block: Block, buf: &mut String) {
         Block::Whitespace => buf.push(' '),
         Block::Newline => buf.push('\n'),
         Block::Comment { .. } | Block::Unknown | Block::EOF => (),
-        Block::Metadata(_) => panic!("metadata not valid in body"),
     }
 }
 
