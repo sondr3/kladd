@@ -437,7 +437,7 @@ mod tests {
 
     #[test]
     fn test_parse_multiple_attributes() {
-        let lexer = tokenize("{name1=value,name2,name3=value2}").collect::<Vec<_>>();
+        let lexer = tokenize("{name1=value,name2,name3=value2 and more}").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_attributes(&mut cursor);
 
@@ -454,7 +454,7 @@ mod tests {
                 },
                 Attribute {
                     name: "name3",
-                    value: AttributeValue::String("value2")
+                    value: AttributeValue::String("value2 and more")
                 },
             ]
         );
