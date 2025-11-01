@@ -33,15 +33,61 @@ pub struct Attribute<'a> {
     pub value: AttributeValue<'a>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Node<'a, T> {
-    node: T,
-    attributes: Option<Attribute<'a>>,
+    pub node: T,
+    pub attributes: Option<Attribute<'a>>,
 }
 
 impl<'a, T> Node<'a, T> {
     pub fn new(node: T, attributes: Option<Attribute<'a>>) -> Self {
         Node { node, attributes }
+    }
+
+    pub fn from_node(node: T) -> Self {
+        Node {
+            node,
+            attributes: None,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct NodeBuilder<'a, T> {
+    pub node: Option<T>,
+    pub attributes: Option<Attribute<'a>>,
+}
+
+impl<'a, T> Default for NodeBuilder<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, T> NodeBuilder<'a, T> {
+    pub fn new() -> Self {
+        NodeBuilder {
+            node: None,
+            attributes: None,
+        }
+    }
+
+    pub fn with_node(&mut self, node: T) -> &mut Self {
+        self.node = Some(node);
+        self
+    }
+
+    pub fn with_attributes(&mut self, attrs: Attribute<'a>) -> &mut Self {
+        self.attributes = Some(attrs);
+        self
+    }
+
+    pub fn build(self) -> Node<'a, T> {
+        assert!(self.node.is_some());
+        Node {
+            node: self.node.unwrap(),
+            attributes: self.attributes,
+        }
     }
 }
 
@@ -57,7 +103,7 @@ pub enum Block<'a> {
     Div(Blocks<'a>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Quote {
     Single,
     Double,
@@ -77,7 +123,7 @@ pub enum InlineKind {
 pub type InlineNode<'a> = Node<'a, Inline<'a>>;
 pub type Inlines<'a> = Vec<InlineNode<'a>>;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Inline<'a> {
     Text(&'a str),
     Strong(Inlines<'a>),
@@ -100,8 +146,8 @@ impl<'a> Inline<'a> {
             InlineKind::Underline => Inline::Underline(body),
             InlineKind::Highlight => Inline::Highlight(body),
             InlineKind::Strikethrough => Inline::Strikethrough(body),
-            InlineKind::Superscript => todo!(),
-            InlineKind::Subscript => todo!(),
+            InlineKind::Superscript => Inline::Superscript(body),
+            InlineKind::Subscript => Inline::Subscript(body),
         }
     }
 }

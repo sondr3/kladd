@@ -1,7 +1,7 @@
 use crate::{
     ast::{
         Attribute, AttributeValue, Block, BlockNode, Document, Inline, InlineKind, InlineNode,
-        Inlines, Node,
+        Inlines, Node, NodeBuilder,
     },
     lexer::{Token, TokenKind},
     token_cursor::TokenCursor,
@@ -197,13 +197,23 @@ fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> Block<'a> {
     // }
 }
 
-pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> Inlines<'a> {
-    vec![]
+pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
+    match cursor.peek_kind() {
+        Some(TokenKind::Text) => Node::new(Inline::Text(cursor.advance().lexeme), None),
+        Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
+        Some(TokenKind::Whitespace) => {
+            cursor.advance();
+            Node::new(Inline::Softbreak, None)
+        }
+        _ => todo!(),
+    }
 }
 
 pub fn parse_simple_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
     cursor.advance();
+
+    let mut node_builder = NodeBuilder::new();
 
     let (t, kind) = match cursor.peek_kind() {
         Some(t @ TokenKind::Slash) => (t, InlineKind::Italic),
@@ -218,15 +228,17 @@ pub fn parse_simple_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
 
     let mut body = Vec::new();
     while cursor.peek_kind() != Some(t) && !cursor.is_at_end() {
-        body.append(&mut parse_inlines(cursor));
+        body.push(parse_inlines(cursor));
     }
+
+    node_builder.with_node(Inline::from_kind(kind, body));
 
     debug_assert!(cursor.peek_kind() == Some(t));
     cursor.advance();
     debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseCurly));
     cursor.advance();
 
-    Node::new(Inline::from_kind(kind, body), None)
+    node_builder.build()
 }
 
 fn parse_attributes<'a>(cursor: &mut TokenCursor<'a>) -> Vec<Attribute<'a>> {
@@ -276,11 +288,42 @@ mod tests {
     use crate::lexer::tokenize;
 
     #[test]
-    fn test_parse_nested_inlines() {
-        let lexer = tokenize("{*bold {/italic {~struck~}/} {=highlit=}}").collect::<Vec<_>>();
+    fn test_parse_single_inline() {
+        let lexer = tokenize("{*bold *}").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_simple_inline(&mut cursor);
-        dbg!(res);
+
+        assert_eq!(
+            res,
+            InlineNode::new(
+                Inline::Strong(vec![InlineNode::new(Inline::Text("bold "), None)]),
+                None
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse_nested_inlines() {
+        let lexer = tokenize("{*bold {/italic {~struck~}/} {=highlit=}*}").collect::<Vec<_>>();
+        let mut cursor = TokenCursor::new(lexer);
+        let res = parse_simple_inline(&mut cursor);
+
+        assert_eq!(
+            res,
+            InlineNode::from_node(Inline::Strong(vec![
+                InlineNode::from_node(Inline::Text("bold ")),
+                InlineNode::from_node(Inline::Italic(vec![
+                    InlineNode::from_node(Inline::Text("italic ")),
+                    InlineNode::from_node(Inline::Strikethrough(vec![InlineNode::from_node(
+                        Inline::Text("struck")
+                    )])),
+                ]),),
+                InlineNode::from_node(Inline::Softbreak,),
+                InlineNode::from_node(Inline::Highlight(vec![InlineNode::from_node(
+                    Inline::Text("highlit"),
+                ),]),)
+            ]),)
+        )
     }
 
     #[test]
