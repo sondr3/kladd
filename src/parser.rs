@@ -19,24 +19,24 @@ pub struct Attribute<'a> {
 pub enum Block<'a> {
     /// A block of TOML data
     Metadata(String),
-    /// A !h1{attribute=value}[content] block
+    /// A `!h1{attribute=value}[content]` block
     Block {
         name: &'a str,
         attributes: Vec<Attribute<'a>>,
         body: Vec<Block<'a>>,
     },
-    /// A @bold[content] inline block
+    /// A `@bold[content]` inline block
     Inline {
         name: &'a str,
         attributes: Vec<Attribute<'a>>,
         body: Vec<Block<'a>>,
     },
-    /// A @{key=value}[content] block
+    /// A `@{key=value}[content]` block
     NakedInline {
         attributes: Vec<Attribute<'a>>,
         body: Vec<Block<'a>>,
     },
-    /// A {/italic/} or {* bold *} simple inline node etc
+    /// A `{/italic/}` or `{*bold*}` simple inline node etc
     SimpleInline {
         name: &'a str,
         body: Vec<Block<'a>>,
@@ -46,7 +46,7 @@ pub enum Block<'a> {
     },
     /// A single pure text node
     Text(&'a str),
-    /// A {% comment %} comment
+    /// A `{% comment %}` comment
     Comment {
         body: String,
     },
@@ -171,14 +171,21 @@ impl<'a> TokenCursor<'a> {
         debug_assert!(self.peek_kind() == Some(TokenKind::OpenBrace));
         self.advance();
 
-        let _body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::CloseBrace));
+        let mut body = Vec::new();
+        while self.peek_kind() != Some(TokenKind::CloseBrace) && !self.is_at_end() {
+            match parse_text(self) {
+                Some(b) => body.push(b),
+                None => break,
+            }
+        }
+
         debug_assert!(self.peek_kind() == Some(TokenKind::CloseBrace));
         self.advance();
 
         Block::Block {
             name,
             attributes,
-            body: vec![],
+            body,
         }
     }
 

@@ -48,7 +48,11 @@ Document {
                     ),
                 },
             ],
-            body: [],
+            body: [
+                Text(
+                    "Header",
+                ),
+            ],
         },
         Whitespace,
         Container {
