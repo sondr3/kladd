@@ -1,0 +1,8 @@
+---
+source: src/html.rs
+expression: html
+---
+<p><bold>bold <italic>italic</italic></bold> </p>
+<h1>Header</h1>
+ 
+<p>With a <bold>body</bold> and <italic>italic</italic> content</p>
