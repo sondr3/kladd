@@ -2,95 +2,97 @@
 source: src/parser.rs
 expression: blocks
 ---
-[
-    Metadata(
+Document {
+    metadata: Some(
         "\nmetadata = things\n",
     ),
-    Comment {
-        body: " this is a comment",
-    },
-    Container {
-        body: [
-            SimpleInline {
-                name: "bold",
-                body: [
-                    Text(
-                        "bold",
+    body: [
+        Comment {
+            body: " this is a comment",
+        },
+        Container {
+            body: [
+                SimpleInline {
+                    name: "bold",
+                    body: [
+                        Text(
+                            "bold",
+                        ),
+                        Whitespace,
+                        SimpleInline {
+                            name: "italic",
+                            body: [
+                                Text(
+                                    "italic",
+                                ),
+                            ],
+                        },
+                    ],
+                },
+                Whitespace,
+            ],
+        },
+        Block {
+            name: "h1",
+            attributes: [
+                Attribute {
+                    name: "some",
+                    value: String(
+                        "value",
                     ),
-                    Whitespace,
-                    SimpleInline {
-                        name: "italic",
-                        body: [
-                            Text(
-                                "italic",
-                            ),
-                        ],
-                    },
-                ],
-            },
-            Whitespace,
-        ],
-    },
-    Block {
-        name: "h1",
-        attributes: [
-            Attribute {
-                name: "some",
-                value: String(
-                    "value",
+                },
+                Attribute {
+                    name: "other",
+                    value: String(
+                        "value2",
+                    ),
+                },
+            ],
+            body: [],
+        },
+        Whitespace,
+        Container {
+            body: [
+                Text(
+                    "With",
                 ),
-            },
-            Attribute {
-                name: "other",
-                value: String(
-                    "value2",
+                Whitespace,
+                Text(
+                    "a",
                 ),
-            },
-        ],
-        body: [],
-    },
-    Whitespace,
-    Container {
-        body: [
-            Text(
-                "With",
-            ),
-            Whitespace,
-            Text(
-                "a",
-            ),
-            Whitespace,
-            Inline {
-                name: "bold",
-                attributes: [],
-                body: [
-                    Text(
-                        "body",
-                    ),
-                ],
-            },
-            Whitespace,
-            Text(
-                "and",
-            ),
-            Whitespace,
-            SimpleInline {
-                name: "italic",
-                body: [
-                    Text(
-                        "italic",
-                    ),
-                ],
-            },
-            Whitespace,
-            Text(
-                "content",
-            ),
-        ],
-    },
-    Container {
-        body: [
-            Whitespace,
-        ],
-    },
-]
+                Whitespace,
+                Inline {
+                    name: "bold",
+                    attributes: [],
+                    body: [
+                        Text(
+                            "body",
+                        ),
+                    ],
+                },
+                Whitespace,
+                Text(
+                    "and",
+                ),
+                Whitespace,
+                SimpleInline {
+                    name: "italic",
+                    body: [
+                        Text(
+                            "italic",
+                        ),
+                    ],
+                },
+                Whitespace,
+                Text(
+                    "content",
+                ),
+            ],
+        },
+        Container {
+            body: [
+                Whitespace,
+            ],
+        },
+    ],
+}

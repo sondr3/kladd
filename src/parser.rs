@@ -56,9 +56,42 @@ pub enum Block<'a> {
     EOF,
 }
 
-pub fn parse<'a>(input: Vec<Token<'a>>) -> Vec<Block<'a>> {
+#[derive(Debug)]
+pub struct Document<'a> {
+    pub metadata: Option<String>,
+    pub body: Vec<Block<'a>>,
+}
+
+impl<'a> Default for Document<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a> Document<'a> {
+    pub fn new() -> Self {
+        Document {
+            metadata: None,
+            body: Vec::new(),
+        }
+    }
+
+    pub fn add_metadata(&mut self, metadata: Block) {
+        match metadata {
+            Block::Metadata(body) => self.metadata = Some(body),
+            _ => panic!("invalid metadata block"),
+        }
+    }
+
+    pub fn add_body(&mut self, body: &mut Vec<Block<'a>>) {
+        self.body.append(body);
+    }
+}
+
+pub fn parse<'a>(input: Vec<Token<'a>>) -> Document<'a> {
     let mut cursor = TokenCursor::new(input);
-    let mut res = Vec::new();
+    let mut doc = Document::new();
+    let mut body = Vec::new();
 
     cursor.eat_while(|t| {
         t.is_some_and(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace))
@@ -68,15 +101,17 @@ pub fn parse<'a>(input: Vec<Token<'a>>) -> Vec<Block<'a>> {
         .peek()
         .is_some_and(|t| t.kind == TokenKind::MetadataMarker)
     {
-        res.push(cursor.parse_metadata());
-    }
+        doc.add_metadata(cursor.parse_metadata());
+    };
 
-    res.extend(std::iter::from_fn(move || match cursor.advance_token() {
+    body.extend(std::iter::from_fn(move || match cursor.advance_token() {
         Block::Unknown | Block::EOF => None,
         tok => Some(tok),
     }));
 
-    res
+    doc.add_body(&mut body);
+
+    doc
 }
 
 impl<'a> TokenCursor<'a> {
