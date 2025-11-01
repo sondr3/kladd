@@ -105,7 +105,6 @@ pub type Blocks<'a> = Vec<BlockNode<'a>>;
 #[derive(Debug, PartialEq, Eq)]
 pub enum Block<'a> {
     Heading { level: u8, body: Inlines<'a> },
-    Span(Inlines<'a>),
     Paragraph(Inlines<'a>),
     Section(Blocks<'a>),
     Div(Blocks<'a>),
@@ -118,7 +117,7 @@ pub enum Quote {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum InlineKind {
+pub enum InlineKind<'a> {
     Strong,
     Italic,
     Underline,
@@ -126,6 +125,7 @@ pub enum InlineKind {
     Strikethrough,
     Superscript,
     Subscript,
+    Custom(&'a str),
 }
 
 pub type InlineNode<'a> = Node<'a, Inline<'a>>;
@@ -142,12 +142,13 @@ pub enum Inline<'a> {
     Superscript(Inlines<'a>),
     Subscript(Inlines<'a>),
     Quoted(Quote, Inlines<'a>),
+    Custom { name: &'a str, body: Inlines<'a> },
     Softbreak,
     Hardbreak,
 }
 
 impl<'a> Inline<'a> {
-    pub fn from_kind(kind: InlineKind, body: Inlines<'a>) -> Self {
+    pub fn from_kind(kind: InlineKind<'a>, body: Inlines<'a>) -> Self {
         match kind {
             InlineKind::Strong => Inline::Strong(body),
             InlineKind::Italic => Inline::Italic(body),
@@ -156,6 +157,7 @@ impl<'a> Inline<'a> {
             InlineKind::Strikethrough => Inline::Strikethrough(body),
             InlineKind::Superscript => Inline::Superscript(body),
             InlineKind::Subscript => Inline::Subscript(body),
+            InlineKind::Custom(ident) => Inline::Custom { name: ident, body },
         }
     }
 }
