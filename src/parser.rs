@@ -354,14 +354,7 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{lexer::tokenize, test_utils::test_utils::TEST_INPUT};
-
-    #[test]
-    fn it_works() {
-        let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
-        let blocks = parse(tokens);
-        insta::assert_debug_snapshot!(blocks);
-    }
+    use crate::lexer::tokenize;
 
     #[test]
     fn test_parse_attributes() {

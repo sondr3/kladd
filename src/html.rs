@@ -75,15 +75,4 @@ fn htmlify_block(block: Block, buf: &mut String) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{lexer::tokenize, parser::parse, test_utils::test_utils::TEST_INPUT};
-
-    #[test]
-    fn it_works() {
-        let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
-        let ast = parse(tokens);
-        let html = to_html(ast);
-        insta::assert_snapshot!(html);
-    }
-}
+mod tests {}

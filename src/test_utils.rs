@@ -1,6 +1,5 @@
 #[cfg(test)]
-pub mod test_utils {
-    pub const TEST_INPUT: &str = r#"
+pub const TEST_INPUT: &str = r#"
 +++
 metadata = things
 +++
@@ -13,4 +12,3 @@ metadata = things
 
 With a @bold[body] and {/italic/} content
  "#;
-}

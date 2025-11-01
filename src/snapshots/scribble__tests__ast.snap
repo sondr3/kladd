@@ -1,6 +1,6 @@
 ---
-source: src/parser.rs
-expression: blocks
+source: src/lib.rs
+expression: ast
 ---
 Document {
     metadata: Some(

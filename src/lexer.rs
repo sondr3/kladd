@@ -132,14 +132,4 @@ impl<'a> CharCursor<'a> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::test_utils::test_utils::TEST_INPUT;
-
-    #[test]
-    fn it_works() {
-        let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
-        assert!(!tokens.is_empty());
-        insta::assert_debug_snapshot!(tokens);
-    }
-}
+mod tests {}

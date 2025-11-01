@@ -1,5 +1,5 @@
 ---
-source: src/html.rs
+source: src/lib.rs
 expression: html
 ---
 <p><bold>bold <italic>italic</italic></bold> </p>

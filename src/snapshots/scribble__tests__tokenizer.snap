@@ -1,5 +1,5 @@
 ---
-source: src/lexer.rs
+source: src/lib.rs
 expression: tokens
 ---
 [
