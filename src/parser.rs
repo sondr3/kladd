@@ -15,6 +15,12 @@ pub struct Attribute<'a> {
     pub value: AttributeValue<'a>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum Quote {
+    Single,
+    Double,
+}
+
 #[derive(Debug)]
 pub enum Block<'a> {
     /// A block of TOML data
@@ -45,7 +51,10 @@ pub enum Block<'a> {
         body: Vec<Block<'a>>,
     },
     /// A single pure text node
-    Text(&'a str),
+    Text {
+        quote: Option<Quote>,
+        body: &'a str,
+    },
     /// A `{% comment %}` comment
     Comment {
         body: String,
@@ -248,7 +257,16 @@ impl<'a> TokenCursor<'a> {
 
 fn parse_text<'a>(cursor: &mut TokenCursor<'a>) -> Option<Block<'a>> {
     match cursor.peek_kind() {
-        Some(TokenKind::Text) => Some(Block::Text(cursor.advance().lexeme)),
+        Some(TokenKind::Text) => Some(Block::Text {
+            body: cursor.advance().lexeme,
+            quote: None,
+        }),
+        Some(TokenKind::Comma | TokenKind::DoubleQuote | TokenKind::SingleQoute) => {
+            Some(Block::Text {
+                body: cursor.advance().lexeme,
+                quote: None,
+            })
+        }
         Some(TokenKind::At) => Some(parse_inline(cursor)),
         Some(TokenKind::OpenCurly) => Some(cursor.parse_simple_inline()),
         Some(TokenKind::Whitespace) => {

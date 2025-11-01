@@ -16,6 +16,8 @@ pub enum TokenKind {
     Dash,
     Percent,
     Comma,
+    DoubleQuote,
+    SingleQoute,
     Text,
     Newline,
     Whitespace,
@@ -80,7 +82,8 @@ impl<'a> CharCursor<'a> {
             '_' => TokenKind::Underscore,
             '-' => TokenKind::Dash,
             '%' => TokenKind::Percent,
-            '"' => self.quoted_text(),
+            '"' => TokenKind::DoubleQuote,
+            '\'' => TokenKind::SingleQoute,
             _ => self.text(),
         };
 
@@ -101,21 +104,6 @@ impl<'a> CharCursor<'a> {
         debug_assert!(self.prev == Some('+'));
         self.eat_while(|c| c.is_some_and(|i| i == '+'));
         TokenKind::MetadataMarker
-    }
-
-    fn quoted_text(&mut self) -> TokenKind {
-        debug_assert!(self.prev == Some('"'));
-        while let Some(c) = self.advance() {
-            match c {
-                '"' => return TokenKind::Text,
-                '\\' if self.peek() == Some('\\') || self.peek() == Some('"') => {
-                    self.advance();
-                }
-                _ => (),
-            }
-        }
-
-        TokenKind::Unknown
     }
 
     fn text(&mut self) -> TokenKind {

@@ -66,7 +66,7 @@ fn htmlify_block(block: Block, buf: &mut String) {
             }
             buf.push_str("</p>");
         }
-        Block::Text(body) => buf.push_str(body),
+        Block::Text { body, .. } => buf.push_str(body),
         Block::Whitespace => buf.push(' '),
         Block::Newline => buf.push('\n'),
         Block::Comment { .. } | Block::Unknown | Block::EOF => (),

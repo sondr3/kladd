@@ -177,7 +177,7 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "With a ",
+        lexeme: "With some ",
     },
     Token {
         kind: At,
@@ -234,6 +234,46 @@ expression: tokens
     Token {
         kind: Text,
         lexeme: "content",
+    },
+    Token {
+        kind: Comma,
+        lexeme: ",",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "and a ",
+    },
+    Token {
+        kind: DoubleQuote,
+        lexeme: "\"",
+    },
+    Token {
+        kind: Text,
+        lexeme: "quoted",
+    },
+    Token {
+        kind: DoubleQuote,
+        lexeme: "\"",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: SingleQoute,
+        lexeme: "'",
+    },
+    Token {
+        kind: Text,
+        lexeme: "text",
+    },
+    Token {
+        kind: SingleQoute,
+        lexeme: "'",
     },
     Token {
         kind: Newline,

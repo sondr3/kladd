@@ -16,15 +16,17 @@ Document {
                 SimpleInline {
                     name: "bold",
                     body: [
-                        Text(
-                            "bold ",
-                        ),
+                        Text {
+                            quote: None,
+                            body: "bold ",
+                        },
                         SimpleInline {
                             name: "italic",
                             body: [
-                                Text(
-                                    "italic",
-                                ),
+                                Text {
+                                    quote: None,
+                                    body: "italic",
+                                },
                             ],
                         },
                     ],
@@ -50,43 +52,83 @@ Document {
                 },
             ],
             body: [
-                Text(
-                    "Header",
-                ),
+                Text {
+                    quote: None,
+                    body: "Header",
+                },
             ],
         },
         Whitespace,
         Newline,
         Container {
             body: [
-                Text(
-                    "With a ",
-                ),
+                Text {
+                    quote: None,
+                    body: "With some ",
+                },
                 Inline {
                     name: "bold",
                     attributes: [],
                     body: [
-                        Text(
-                            "body",
-                        ),
+                        Text {
+                            quote: None,
+                            body: "body",
+                        },
                     ],
                 },
                 Whitespace,
-                Text(
-                    "and ",
-                ),
+                Text {
+                    quote: None,
+                    body: "and ",
+                },
                 SimpleInline {
                     name: "italic",
                     body: [
-                        Text(
-                            "italic",
-                        ),
+                        Text {
+                            quote: None,
+                            body: "italic",
+                        },
                     ],
                 },
                 Whitespace,
-                Text(
-                    "content",
-                ),
+                Text {
+                    quote: None,
+                    body: "content",
+                },
+                Text {
+                    quote: None,
+                    body: ",",
+                },
+                Whitespace,
+                Text {
+                    quote: None,
+                    body: "and a ",
+                },
+                Text {
+                    quote: None,
+                    body: "\"",
+                },
+                Text {
+                    quote: None,
+                    body: "quoted",
+                },
+                Text {
+                    quote: None,
+                    body: "\"",
+                },
+                Whitespace,
+                Text {
+                    quote: None,
+                    body: "'",
+                },
+                Text {
+                    quote: None,
+                    body: "text",
+                },
+                Text {
+                    quote: None,
+                    body: "'",
+                },
             ],
         },
         Newline,

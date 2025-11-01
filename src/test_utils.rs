@@ -10,5 +10,5 @@ metadata = things
 
 !h1{some=value,other=value2}[Header] 
 
-With a @bold[body] and {/italic/} content
+With some @bold[body] and {/italic/} content, and a "quoted" 'text'
  "#;
