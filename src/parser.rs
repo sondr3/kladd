@@ -131,14 +131,13 @@ impl<'a> TokenCursor<'a> {
             }
             Some(TokenKind::Newline) => {
                 self.advance();
-                match self.peek_kind() {
-                    Some(TokenKind::Bang) => self.parse_block(),
-                    Some(TokenKind::Dash) => self.parse_comment(),
-                    _ => self.parse_container(),
-                }
+                Block::Newline
             }
             Some(TokenKind::OpenCurly) => self.parse_container(),
-            _ => Block::Unknown,
+            Some(TokenKind::Bang) => self.parse_block(),
+            Some(TokenKind::Dash) => self.parse_comment(),
+            None => Block::EOF,
+            _ => self.parse_container(),
         }
     }
 

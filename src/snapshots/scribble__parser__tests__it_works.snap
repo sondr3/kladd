@@ -7,6 +7,7 @@ Document {
         "\nmetadata = things\n",
     ),
     body: [
+        Newline,
         Comment {
             body: " this is a comment",
         },
@@ -32,6 +33,7 @@ Document {
                 Whitespace,
             ],
         },
+        Newline,
         Block {
             name: "h1",
             attributes: [
@@ -55,6 +57,7 @@ Document {
             ],
         },
         Whitespace,
+        Newline,
         Container {
             body: [
                 Text(
@@ -93,10 +96,7 @@ Document {
                 ),
             ],
         },
-        Container {
-            body: [
-                Whitespace,
-            ],
-        },
+        Newline,
+        Whitespace,
     ],
 }
