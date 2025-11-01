@@ -17,11 +17,7 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "metadata",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
+        lexeme: "metadata ",
     },
     Token {
         kind: Equals,
@@ -61,31 +57,7 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "this",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
-    },
-    Token {
-        kind: Text,
-        lexeme: "is",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
-    },
-    Token {
-        kind: Text,
-        lexeme: "a",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
-    },
-    Token {
-        kind: Text,
-        lexeme: "comment",
+        lexeme: "this is a comment",
     },
     Token {
         kind: Newline,
@@ -101,11 +73,7 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "bold",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
+        lexeme: "bold ",
     },
     Token {
         kind: OpenCurly,
@@ -209,19 +177,7 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "With",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
-    },
-    Token {
-        kind: Text,
-        lexeme: "a",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
+        lexeme: "With a ",
     },
     Token {
         kind: At,
@@ -249,11 +205,7 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "and",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
+        lexeme: "and ",
     },
     Token {
         kind: OpenCurly,

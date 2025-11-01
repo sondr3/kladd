@@ -33,10 +33,6 @@ impl<'a> Token<'a> {
     pub fn new(kind: TokenKind, lexeme: &'a str) -> Self {
         Token { kind, lexeme }
     }
-
-    pub fn dummy() -> Self {
-        Token::new(TokenKind::Unknown, "")
-    }
 }
 
 pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token<'a>> {
@@ -123,7 +119,10 @@ impl<'a> CharCursor<'a> {
     }
 
     fn text(&mut self) -> TokenKind {
-        while self.peek().is_some_and(char::is_alphanumeric) {
+        while self
+            .peek()
+            .is_some_and(|c| c.is_alphanumeric() || is_horizontal_whitespace(Some(c)))
+        {
             self.advance();
         }
 
@@ -132,4 +131,22 @@ impl<'a> CharCursor<'a> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::{
+        char_cursor::CharCursor,
+        lexer::{Token, TokenKind},
+    };
+
+    #[test]
+    fn lex_quoted_text() {
+        let cases = vec![(
+            "this is some text",
+            Token::new(TokenKind::Text, "this is some text"),
+        )];
+
+        for (input, expected) in cases {
+            let res = CharCursor::new(input).advance_token();
+            assert_eq!(expected, res);
+        }
+    }
+}
