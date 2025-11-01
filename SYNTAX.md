@@ -31,7 +31,7 @@ add arbitrary @{class=red}[classes] to text.
 - Bold: `{*italic*}`
 - Underline: `{_underline_}`
 - Highlighted: `{=highlight=}`
-- Strikethrough: `{-strikethrough-}`
+- Strikethrough: `{~strikethrough~}`
 - Comment: `{% comment %}`
 
 ## Block elements
