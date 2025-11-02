@@ -1,7 +1,7 @@
 use crate::{
     ast::{
         Attribute, AttributeValue, Block, BlockNode, Document, Inline, InlineKind, InlineNode,
-        Inlines, Node, NodeBuilder,
+        Node, NodeBuilder,
     },
     lexer::{Token, TokenKind},
     token_cursor::TokenCursor,
@@ -18,7 +18,7 @@ pub fn parse<'a>(input: Vec<Token<'a>>) -> Document<'a> {
         .peek()
         .is_some_and(|t| t.kind == TokenKind::MetadataMarker)
     {
-        Some(cursor.parse_metadata())
+        Some(parse_metadata(&mut cursor))
     } else {
         None
     };
@@ -56,17 +56,6 @@ impl<'a> TokenCursor<'a> {
             None => None,
             _ => None, // _ => self.parse_container(),
         }
-    }
-
-    fn parse_metadata(&mut self) -> String {
-        debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
-        self.advance();
-
-        let body = self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::MetadataMarker));
-        debug_assert!(self.peek_kind() == Some(TokenKind::MetadataMarker));
-        self.advance();
-
-        body.iter().map(|t| t.lexeme).collect()
     }
 
     fn parse_block(&mut self) -> Block<'a> {
@@ -150,6 +139,17 @@ pub fn parse_text<'a>(cursor: &mut TokenCursor<'a>) -> Option<BlockNode<'a>> {
     //         panic!("{:?} not yet handled in text", cursor.peek_kind());
     //     }
     // }
+}
+
+fn parse_metadata<'a>(cursor: &mut TokenCursor<'a>) -> String {
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::MetadataMarker));
+    cursor.advance();
+
+    let body = cursor.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::MetadataMarker));
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::MetadataMarker));
+    cursor.advance();
+
+    body.iter().map(|t| t.lexeme).collect()
 }
 
 pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
