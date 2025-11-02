@@ -53,91 +53,21 @@ impl<'a> TokenCursor<'a> {
     }
 }
 
-    fn parse_block(&mut self) -> Block<'a> {
-        debug_assert!(self.peek_kind() == Some(TokenKind::Bang));
-        self.advance();
-
-        debug_assert!(self.peek_kind() == Some(TokenKind::Text));
-        let name = self.advance().lexeme;
-
-        let attributes = if self.peek_kind() == Some(TokenKind::OpenCurly) {
-            parse_attributes(self)
-        } else {
-            vec![]
-        };
-
-        debug_assert!(self.peek_kind() == Some(TokenKind::OpenBrace));
-        self.advance();
-
-        let mut body = Vec::new();
-        while self.peek_kind() != Some(TokenKind::CloseBrace) && !self.is_at_end() {
-            match parse_text(self) {
-                Some(b) => body.push(b),
-                None => break,
-            }
-        }
-
-        debug_assert!(self.peek_kind() == Some(TokenKind::CloseBrace));
-        self.advance();
-
-        todo!()
-    }
-
-    fn parse_container(&mut self) -> Block<'a> {
-        let mut body = Vec::new();
-        while !matches!(self.peek_kind(), Some(TokenKind::Newline | TokenKind::EOF)) {
-            match parse_text(self) {
-                Some(b) => body.push(b),
-                None => break,
-            }
-        }
-        todo!()
 fn skip_whitespace<'a>(cursor: &mut TokenCursor<'a>) {
     while let Some(TokenKind::Newline | TokenKind::Whitespace) = cursor.peek_kind() {
         cursor.advance();
     }
 }
 
-    fn parse_comment(&mut self) {
-        debug_assert!(self.peek_kind() == Some(TokenKind::Dash));
-        self.advance();
+fn parse_comment<'a>(cursor: &mut TokenCursor<'a>) {
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::Dash));
+    cursor.advance();
 
-        debug_assert!(self.peek_kind() == Some(TokenKind::Dash));
-        self.advance();
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::Dash));
+    cursor.advance();
 
-        self.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::Newline));
-        self.advance();
-    }
-}
-
-pub fn parse_text<'a>(cursor: &mut TokenCursor<'a>) -> Option<BlockNode<'a>> {
-    todo!()
-    // match cursor.peek_kind() {
-    //     Some(TokenKind::Text) => Some(Block::Text {
-    //         body: cursor.advance().lexeme,
-    //         quote: None,
-    //     }),
-    //     Some(TokenKind::Comma | TokenKind::DoubleQuote | TokenKind::SingleQoute) => {
-    //         Some(Block::Text {
-    //             body: cursor.advance().lexeme,
-    //             quote: None,
-    //         })
-    //     }
-    //     Some(TokenKind::At) => Some(parse_inline(cursor)),
-    //     Some(TokenKind::OpenCurly) => Some(parse_simple_inline(cursor)),
-    //     Some(TokenKind::Whitespace) => {
-    //         cursor.advance();
-    //         Some(Block::Whitespace)
-    //     }
-    //     Some(TokenKind::Newline) => {
-    //         cursor.advance();
-    //         Some(Block::Newline)
-    //     }
-    //     None => None,
-    //     _ => {
-    //         panic!("{:?} not yet handled in text", cursor.peek_kind());
-    //     }
-    // }
+    cursor.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::Newline));
+    cursor.advance();
 }
 
 fn parse_metadata<'a>(cursor: &mut TokenCursor<'a>) -> String {
