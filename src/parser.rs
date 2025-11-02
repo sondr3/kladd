@@ -25,7 +25,7 @@ pub fn parse<'a>(input: Vec<Token<'a>>) -> Document<'a> {
 
     let mut body = Vec::new();
     loop {
-        match dbg!(cursor.advance_token()) {
+        match cursor.advance_token() {
             Some(Some(t)) => body.push(t),
             Some(None) => continue,
             None => break,
@@ -112,7 +112,6 @@ pub fn parse_section<'a>(cursor: &mut TokenCursor<'a>) -> Option<BlockNode<'a>> 
     skip_whitespace(cursor);
 
     while !is_heading(cursor) && !cursor.is_at_end() {
-        dbg!(cursor.peek());
         body.push(parse_paragraph(cursor));
         skip_whitespace(cursor);
     }
