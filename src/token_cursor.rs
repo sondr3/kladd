@@ -26,6 +26,10 @@ impl<'a> TokenCursor<'a> {
         self.iter.get(self.idx + n)
     }
 
+    pub fn peek_nth_kind(&self, n: usize) -> Option<TokenKind> {
+        self.iter.get(self.idx + n).map(|t| t.kind)
+    }
+
     pub fn advance(&mut self) -> Token<'a> {
         debug_assert!(self.idx <= self.iter.len());
         let t = self.iter[self.idx];
@@ -34,7 +38,7 @@ impl<'a> TokenCursor<'a> {
     }
 
     pub fn is_at_end(&self) -> bool {
-        self.peek_kind() == Some(TokenKind::EOF)
+        self.idx >= self.iter.len()
     }
 
     pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token<'a>>) -> bool) -> Token<'a> {
