@@ -184,6 +184,9 @@ pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
         body.push(parse_inlines(cursor));
     }
 
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
+    cursor.advance();
+
     builder.with_node(Inline::from_kind(kind, body));
 
     builder.build()
