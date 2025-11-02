@@ -23,46 +23,35 @@ pub fn parse<'a>(input: Vec<Token<'a>>) -> Document<'a> {
         None
     };
 
-    let body = Vec::from_iter(std::iter::from_fn(move || cursor.advance_token()));
+    let mut body = Vec::new();
+    loop {
+        match dbg!(cursor.advance_token()) {
+            Some(Some(t)) => body.push(t),
+            Some(None) => continue,
+            None => break,
+        }
+    }
 
     Document { metadata, body }
 }
 
 impl<'a> TokenCursor<'a> {
-    pub fn advance_token(&mut self) -> Option<BlockNode<'a>> {
+    pub fn advance_token(&mut self) -> Option<Option<BlockNode<'a>>> {
+        skip_whitespace(self);
         match self.peek_kind() {
-            // Some(TokenKind::EOF) => {
-            //     self.advance();
-            //     Block::EOF
-            // }
-            // Some(TokenKind::Unknown) => {
-            //     self.advance();
-            //     Block::Unknown
-            // }
-            // Some(TokenKind::Whitespace) => {
-            //     self.advance();
-            //     Block::Whitespace
-            // }
-            // Some(TokenKind::Newline) => {
-            //     self.advance();
-            //     Block::Newline
-            // }
-            // Some(TokenKind::OpenCurly) => self.parse_container(),
-            Some(TokenKind::Bang) => {
-                if is_heading(self) {
-                    Some(parse_heading(self))
-                } else {
-                    todo!()
-                }
-            }
-            Some(TokenKind::Dash) => {
-                self.parse_comment();
+            Some(TokenKind::EOF) => {
+                self.advance();
                 None
             }
+            Some(TokenKind::Dash) => {
+                parse_comment(self);
+                Some(None)
+            }
             None => None,
-            _ => None, // _ => self.parse_container(),
+            _ => Some(parse_section(self)),
         }
     }
+}
 
     fn parse_block(&mut self) -> Block<'a> {
         debug_assert!(self.peek_kind() == Some(TokenKind::Bang));
@@ -103,7 +92,11 @@ impl<'a> TokenCursor<'a> {
             }
         }
         todo!()
+fn skip_whitespace<'a>(cursor: &mut TokenCursor<'a>) {
+    while let Some(TokenKind::Newline | TokenKind::Whitespace) = cursor.peek_kind() {
+        cursor.advance();
     }
+}
 
     fn parse_comment(&mut self) {
         debug_assert!(self.peek_kind() == Some(TokenKind::Dash));
