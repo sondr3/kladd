@@ -95,6 +95,52 @@ pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     }
 }
 
+pub fn parse_section<'a>(cursor: &mut TokenCursor<'a>) -> Option<BlockNode<'a>> {
+    let mut builder = NodeBuilder::new();
+
+    skip_whitespace(cursor);
+    if !is_heading(cursor) {
+        return None;
+    }
+
+    let mut body = Vec::new();
+
+    body.push(parse_heading(cursor));
+    skip_whitespace(cursor);
+
+    while !is_heading(cursor) && !cursor.is_at_end() {
+        dbg!(cursor.peek());
+        body.push(parse_paragraph(cursor));
+        skip_whitespace(cursor);
+    }
+
+    builder.with_node(Block::Section(body));
+    Some(builder.build())
+}
+
+fn is_double_newline<'a>(cursor: &mut TokenCursor<'a>) -> bool {
+    match cursor.peek() {
+        Some(Token {
+            kind: TokenKind::Newline,
+            lexeme,
+        }) => lexeme.len() >= 2,
+        _ => false,
+    }
+}
+
+pub fn parse_paragraph<'a>(cursor: &mut TokenCursor<'a>) -> BlockNode<'a> {
+    let mut builder = NodeBuilder::new();
+
+    let mut body = Vec::new();
+    while !is_heading(cursor) && !is_double_newline(cursor) && !cursor.is_at_end() {
+        body.push(parse_inlines(cursor));
+    }
+
+    builder.with_node(Block::Paragraph(body));
+
+    builder.build()
+}
+
 pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::At));
     cursor.advance();
