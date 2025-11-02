@@ -83,8 +83,11 @@ fn parse_metadata<'a>(cursor: &mut TokenCursor<'a>) -> String {
 
 pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     match cursor.peek_kind() {
-        Some(TokenKind::Comma) => Node::new(Inline::Text(cursor.advance().lexeme), None),
-        Some(TokenKind::Text) => Node::new(Inline::Text(cursor.advance().lexeme), None),
+        Some(TokenKind::Comma)
+        | Some(TokenKind::Text)
+        | Some(TokenKind::Whitespace)
+        | Some(TokenKind::DoubleQuote)
+        | Some(TokenKind::SingleQoute) => Node::new(Inline::Text(cursor.advance().lexeme), None),
         Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
         Some(TokenKind::At) => parse_inline(cursor),
         Some(TokenKind::Newline) => {
