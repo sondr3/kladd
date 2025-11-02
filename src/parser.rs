@@ -319,6 +319,9 @@ fn parse_heading<'a>(cursor: &mut TokenCursor<'a>) -> BlockNode<'a> {
         body.push(parse_inlines(cursor));
     }
 
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
+    cursor.advance();
+
     builder.with_node(Block::Heading { level, body });
 
     builder.build()
