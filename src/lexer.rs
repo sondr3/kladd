@@ -23,7 +23,6 @@ pub enum TokenKind {
     Newline,
     Whitespace,
     EOF,
-    Unknown,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
