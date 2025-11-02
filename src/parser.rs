@@ -217,12 +217,11 @@ pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
 
     let mut builder = NodeBuilder::new();
 
-    debug_assert!(cursor.peek_kind() == Some(TokenKind::Text));
-    let kind = match cursor.advance() {
-        Token {
+    let kind = match cursor.peek() {
+        Some(Token {
             kind: TokenKind::Text,
             lexeme,
-        } => match lexeme {
+        }) => match *lexeme {
             "bold" | "strong" | "b" => InlineKind::Strong,
             "italic" | "i" => InlineKind::Italic,
             "underline" | "ul" => InlineKind::Underline,
@@ -232,8 +231,16 @@ pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
             "subscript" | "sub" => InlineKind::Subscript,
             ident => InlineKind::Custom(ident),
         },
+        Some(Token {
+            kind: TokenKind::OpenCurly | TokenKind::OpenBrace,
+            ..
+        }) => InlineKind::Naked,
         e => panic!("{:?} cannot be a inline name", e),
     };
+
+    if kind != InlineKind::Naked {
+        cursor.advance();
+    }
 
     if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
         builder.with_attributes(parse_attributes(cursor));
@@ -400,6 +407,41 @@ mod tests {
                 None
             )
         );
+    }
+
+    #[test]
+    fn test_parse_inlines() {
+        let inputs = vec![
+            (
+                "@{class=huge}[Huge]",
+                InlineNode::new(
+                    Inline::Naked(map_inlines([Inline::Text("Huge")])),
+                    Some(vec![Attribute::new(
+                        "class",
+                        AttributeValue::String("huge"),
+                    )]),
+                ),
+            ),
+            (
+                "@sup[super]",
+                InlineNode::from_node(Inline::Superscript(map_inlines([Inline::Text("super")]))),
+            ),
+            (
+                "@custom[yeet]",
+                InlineNode::from_node(Inline::Custom {
+                    name: "custom",
+                    body: map_inlines([Inline::Text("yeet")]),
+                }),
+            ),
+        ];
+
+        for (attr, expected) in inputs {
+            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let mut cursor = TokenCursor::new(lexer);
+            let res = parse_inline(&mut cursor);
+
+            assert_eq!(res, expected);
+        }
     }
 
     #[test]

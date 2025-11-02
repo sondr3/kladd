@@ -125,6 +125,7 @@ pub enum InlineKind<'a> {
     Strikethrough,
     Superscript,
     Subscript,
+    Naked,
     Custom(&'a str),
 }
 
@@ -141,6 +142,7 @@ pub enum Inline<'a> {
     Strikethrough(Inlines<'a>),
     Superscript(Inlines<'a>),
     Subscript(Inlines<'a>),
+    Naked(Inlines<'a>),
     Quoted(Quote, Inlines<'a>),
     Custom { name: &'a str, body: Inlines<'a> },
     Softbreak,
@@ -157,6 +159,7 @@ impl<'a> Inline<'a> {
             InlineKind::Strikethrough => Inline::Strikethrough(body),
             InlineKind::Superscript => Inline::Superscript(body),
             InlineKind::Subscript => Inline::Subscript(body),
+            InlineKind::Naked => Inline::Naked(body),
             InlineKind::Custom(ident) => Inline::Custom { name: ident, body },
         }
     }
