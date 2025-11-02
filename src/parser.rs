@@ -266,11 +266,17 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
 }
 
 fn is_heading<'a>(cursor: &TokenCursor<'a>) -> bool {
-    match cursor.peek_nth(1) {
-        Some(Token {
-            kind: TokenKind::Text,
-            lexeme,
-        }) => matches!(
+    match (cursor.peek(), cursor.peek_nth(1)) {
+        (
+            Some(Token {
+                kind: TokenKind::Bang,
+                ..
+            }),
+            Some(Token {
+                kind: TokenKind::Text,
+                lexeme,
+            }),
+        ) => matches!(
             *lexeme,
             "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "title" | "section" | "subsection"
         ),
