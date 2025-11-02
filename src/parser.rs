@@ -87,7 +87,7 @@ pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
         Some(TokenKind::Text) => Node::new(Inline::Text(cursor.advance().lexeme), None),
         Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
         Some(TokenKind::At) => parse_inline(cursor),
-        Some(TokenKind::Whitespace) => {
+        Some(TokenKind::Newline) => {
             cursor.advance();
             Node::new(Inline::Softbreak, None)
         }
@@ -342,6 +342,7 @@ mod tests {
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_inline(&mut cursor);
 
+        assert!(cursor.is_at_end());
         assert_eq!(
             res,
             InlineNode::new(
@@ -382,6 +383,7 @@ mod tests {
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_inline(&mut cursor);
 
+            assert!(cursor.is_at_end());
             assert_eq!(res, expected);
         }
     }
@@ -392,6 +394,7 @@ mod tests {
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_simple_inline(&mut cursor);
 
+        assert!(cursor.is_at_end());
         assert_eq!(
             res,
             InlineNode::new(
@@ -407,6 +410,7 @@ mod tests {
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_simple_inline(&mut cursor);
 
+        assert!(cursor.is_at_end());
         assert_eq!(
             res,
             InlineNode::from_node(Inline::Strong(vec![
@@ -417,7 +421,7 @@ mod tests {
                         Inline::Text("struck")
                     )])),
                 ]),),
-                InlineNode::from_node(Inline::Softbreak,),
+                InlineNode::from_node(Inline::Text(" ")),
                 InlineNode::from_node(Inline::Highlight(vec![InlineNode::from_node(
                     Inline::Text("highlit"),
                 ),]),)
@@ -435,7 +439,7 @@ mod tests {
                     body: map_inlines([
                         Inline::Text("Hello"),
                         Inline::Text(","),
-                        Inline::Softbreak,
+                        Inline::Text(" "),
                         Inline::Text("world"),
                     ]),
                 }),
@@ -457,6 +461,7 @@ mod tests {
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_heading(&mut cursor);
 
+            assert!(cursor.is_at_end());
             assert_eq!(res, expected);
         }
     }
@@ -472,6 +477,7 @@ mod tests {
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_attribute(&mut cursor);
 
+            assert!(cursor.is_at_end());
             assert_eq!(res.value, expected);
         }
     }
@@ -482,6 +488,7 @@ mod tests {
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_attributes(&mut cursor);
 
+        assert!(cursor.is_at_end());
         assert_eq!(
             res,
             vec![
