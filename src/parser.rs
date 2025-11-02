@@ -48,7 +48,13 @@ impl<'a> TokenCursor<'a> {
             //     Block::Newline
             // }
             // Some(TokenKind::OpenCurly) => self.parse_container(),
-            // Some(TokenKind::Bang) => self.parse_block(),
+            Some(TokenKind::Bang) => {
+                if is_heading(self) {
+                    Some(parse_heading(self))
+                } else {
+                    todo!()
+                }
+            }
             Some(TokenKind::Dash) => {
                 self.parse_comment();
                 None
@@ -287,8 +293,8 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
     Attribute { name, value }
 }
 
-fn is_heading<'a>(cursor: &mut TokenCursor<'a>) -> bool {
-    match cursor.peek() {
+fn is_heading<'a>(cursor: &TokenCursor<'a>) -> bool {
+    match cursor.peek_nth(1) {
         Some(Token {
             kind: TokenKind::Text,
             lexeme,
