@@ -152,51 +152,6 @@ pub fn parse_text<'a>(cursor: &mut TokenCursor<'a>) -> Option<BlockNode<'a>> {
     // }
 }
 
-fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> Block<'a> {
-    debug_assert!(cursor.peek_kind() == Some(TokenKind::At));
-    cursor.advance();
-
-    let name = match cursor.peek_kind() {
-        Some(TokenKind::Text) => Some(cursor.advance().lexeme),
-        Some(TokenKind::OpenCurly | TokenKind::OpenBrace) => None,
-        _ => panic!("invalid inline item"),
-    };
-
-    let attrs = if matches!(cursor.peek_kind(), Some(TokenKind::OpenCurly)) {
-        parse_attributes(cursor)
-    } else {
-        vec![]
-    };
-
-    debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
-    cursor.advance();
-
-    let mut body = Vec::new();
-    while cursor.peek_kind() != Some(TokenKind::CloseBrace) && !cursor.is_at_end() {
-        match parse_text(cursor) {
-            Some(b) => body.push(b),
-            None => break,
-        }
-    }
-
-    debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
-    cursor.advance();
-
-    todo!()
-    // if let Some(name) = name {
-    //     Block::Inline {
-    //         name,
-    //         attributes: attrs,
-    //         body,
-    //     }
-    // } else {
-    //     Block::NakedInline {
-    //         attributes: attrs,
-    //         body,
-    //     }
-    // }
-}
-
 pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     match cursor.peek_kind() {
         Some(TokenKind::Comma) => Node::new(Inline::Text(cursor.advance().lexeme), None),
