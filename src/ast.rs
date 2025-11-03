@@ -1,18 +1,18 @@
 #[derive(Debug)]
-pub struct Document<'a> {
+pub struct Document {
     pub metadata: Option<String>,
-    pub body: Blocks<'a>,
+    pub body: Blocks,
     // pub references: HashMap<String, String>,
     // pub footnotes: HashMap<String, String>,
 }
 
-impl<'a> Default for Document<'a> {
+impl Default for Document {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a> Document<'a> {
+impl Document {
     pub fn new() -> Self {
         Document {
             metadata: None,
@@ -22,33 +22,33 @@ impl<'a> Document<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum AttributeValue<'a> {
-    String(&'a str),
+pub enum AttributeValue {
+    String(String),
     Boolean,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Attribute<'a> {
-    pub name: &'a str,
-    pub value: AttributeValue<'a>,
+pub struct Attribute {
+    pub name: String,
+    pub value: AttributeValue,
 }
 
-impl<'a> Attribute<'a> {
-    pub fn new(name: &'a str, value: AttributeValue<'a>) -> Self {
+impl Attribute {
+    pub fn new(name: String, value: AttributeValue) -> Self {
         Attribute { name, value }
     }
 }
 
-pub type Attributes<'a> = Vec<Attribute<'a>>;
+pub type Attributes = Vec<Attribute>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Node<'a, T> {
+pub struct Node<T> {
     pub node: T,
-    pub attributes: Option<Attributes<'a>>,
+    pub attributes: Option<Attributes>,
 }
 
-impl<'a, T> Node<'a, T> {
-    pub fn new(node: T, attributes: Option<Attributes<'a>>) -> Self {
+impl<T> Node<T> {
+    pub fn new(node: T, attributes: Option<Attributes>) -> Self {
         Node { node, attributes }
     }
 
@@ -61,18 +61,18 @@ impl<'a, T> Node<'a, T> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct NodeBuilder<'a, T> {
+pub struct NodeBuilder<T> {
     node: Option<T>,
-    attributes: Option<Attributes<'a>>,
+    attributes: Option<Attributes>,
 }
 
-impl<'a, T> Default for NodeBuilder<'a, T> {
+impl<T> Default for NodeBuilder<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, T> NodeBuilder<'a, T> {
+impl<T> NodeBuilder<T> {
     pub fn new() -> Self {
         NodeBuilder {
             node: None,
@@ -85,12 +85,12 @@ impl<'a, T> NodeBuilder<'a, T> {
         self
     }
 
-    pub fn with_attributes(&mut self, attrs: Attributes<'a>) -> &mut Self {
+    pub fn with_attributes(&mut self, attrs: Attributes) -> &mut Self {
         self.attributes = Some(attrs);
         self
     }
 
-    pub fn build(self) -> Node<'a, T> {
+    pub fn build(self) -> Node<T> {
         assert!(self.node.is_some());
         Node {
             node: self.node.unwrap(),
@@ -99,15 +99,15 @@ impl<'a, T> NodeBuilder<'a, T> {
     }
 }
 
-pub type BlockNode<'a> = Node<'a, Block<'a>>;
-pub type Blocks<'a> = Vec<BlockNode<'a>>;
+pub type BlockNode = Node<Block>;
+pub type Blocks = Vec<BlockNode>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Block<'a> {
-    Heading { level: u8, body: Inlines<'a> },
-    Paragraph(Inlines<'a>),
-    Section(Blocks<'a>),
-    Div(Blocks<'a>),
+pub enum Block {
+    Heading { level: u8, body: Inlines },
+    Paragraph(Inlines),
+    Section(Blocks),
+    Div(Blocks),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -117,7 +117,7 @@ pub enum Quote {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum InlineKind<'a> {
+pub enum InlineKind {
     Strong,
     Italic,
     Underline,
@@ -126,31 +126,31 @@ pub enum InlineKind<'a> {
     Superscript,
     Subscript,
     Naked,
-    Custom(&'a str),
+    Custom(String),
 }
 
-pub type InlineNode<'a> = Node<'a, Inline<'a>>;
-pub type Inlines<'a> = Vec<InlineNode<'a>>;
+pub type InlineNode = Node<Inline>;
+pub type Inlines = Vec<InlineNode>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Inline<'a> {
-    Text(&'a str),
-    Strong(Inlines<'a>),
-    Italic(Inlines<'a>),
-    Underline(Inlines<'a>),
-    Highlight(Inlines<'a>),
-    Strikethrough(Inlines<'a>),
-    Superscript(Inlines<'a>),
-    Subscript(Inlines<'a>),
-    Naked(Inlines<'a>),
-    Quoted(Quote, Inlines<'a>),
-    Custom { name: &'a str, body: Inlines<'a> },
+pub enum Inline {
+    Text(String),
+    Strong(Inlines),
+    Italic(Inlines),
+    Underline(Inlines),
+    Highlight(Inlines),
+    Strikethrough(Inlines),
+    Superscript(Inlines),
+    Subscript(Inlines),
+    Naked(Inlines),
+    Quoted(Quote, Inlines),
+    Custom { name: String, body: Inlines },
     Softbreak,
     Hardbreak,
 }
 
-impl<'a> Inline<'a> {
-    pub fn from_kind(kind: InlineKind<'a>, body: Inlines<'a>) -> Self {
+impl Inline {
+    pub fn from_kind(kind: InlineKind, body: Inlines) -> Self {
         match kind {
             InlineKind::Strong => Inline::Strong(body),
             InlineKind::Italic => Inline::Italic(body),

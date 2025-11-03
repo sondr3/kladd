@@ -10,7 +10,7 @@ pub fn to_html(Document { body, .. }: &Document) -> String {
     res
 }
 
-fn level_to_heading(level: &u8) -> &'static str {
+fn level_to_heading(level: u8) -> &'static str {
     match level {
         1 => "h1",
         2 => "h2",
@@ -25,7 +25,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
     match &node.node {
         Block::Heading { level, body } => {
             buf.push('<');
-            buf.push_str(level_to_heading(level));
+            buf.push_str(level_to_heading(*level));
             buf.push('>');
 
             for node in body {
@@ -33,7 +33,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             }
 
             buf.push_str("</");
-            buf.push_str(level_to_heading(level));
+            buf.push_str(level_to_heading(*level));
             buf.push('>');
         }
         Block::Paragraph(nodes) => {

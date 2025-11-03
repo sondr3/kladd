@@ -29,7 +29,7 @@ impl<'a> CharCursor<'a> {
         self.chars.clone().next()
     }
 
-    pub fn peek_nth(&self, n: usize) -> Option<char> {
+    pub fn _peek_nth(&self, n: usize) -> Option<char> {
         self.chars.clone().nth(n)
     }
 

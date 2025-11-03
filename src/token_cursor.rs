@@ -1,20 +1,20 @@
 use crate::lexer::{Token, TokenKind};
 
 #[derive(Debug)]
-pub struct TokenCursor<'a> {
-    iter: Vec<Token<'a>>,
+pub struct TokenCursor {
+    iter: Vec<Token>,
     idx: usize,
 }
 
-impl<'a> TokenCursor<'a> {
-    pub fn new(input: Vec<Token<'a>>) -> Self {
+impl TokenCursor {
+    pub fn new(input: Vec<Token>) -> Self {
         TokenCursor {
             iter: input,
             idx: 0,
         }
     }
 
-    pub fn peek(&self) -> Option<&Token<'a>> {
+    pub fn peek(&self) -> Option<&Token> {
         self.iter.get(self.idx)
     }
 
@@ -22,17 +22,17 @@ impl<'a> TokenCursor<'a> {
         self.iter.get(self.idx).map(|t| t.kind)
     }
 
-    pub fn peek_nth(&self, n: usize) -> Option<&Token<'a>> {
+    pub fn peek_nth(&self, n: usize) -> Option<&Token> {
         self.iter.get(self.idx + n)
     }
 
-    pub fn peek_nth_kind(&self, n: usize) -> Option<TokenKind> {
+    pub fn _peek_nth_kind(&self, n: usize) -> Option<TokenKind> {
         self.iter.get(self.idx + n).map(|t| t.kind)
     }
 
-    pub fn advance(&mut self) -> Token<'a> {
+    pub fn advance(&mut self) -> Token {
         debug_assert!(self.idx <= self.iter.len());
-        let t = self.iter[self.idx];
+        let t = self.iter[self.idx].clone();
         self.idx += 1;
         t
     }
@@ -41,7 +41,7 @@ impl<'a> TokenCursor<'a> {
         self.idx >= self.iter.len()
     }
 
-    pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token<'a>>) -> bool) -> Token<'a> {
+    pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token>) -> bool) -> Token {
         debug_assert!(pred(self.peek()));
         if pred(self.peek()) {
             self.advance()
@@ -50,10 +50,7 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
-    pub fn eat_while(
-        &mut self,
-        mut predicate: impl FnMut(Option<&Token<'a>>) -> bool,
-    ) -> Vec<Token<'a>> {
+    pub fn eat_while(&mut self, mut predicate: impl FnMut(Option<&Token>) -> bool) -> Vec<Token> {
         let mut res = Vec::new();
 
         while predicate(self.peek()) && !self.is_at_end() {

@@ -22,28 +22,28 @@ pub enum TokenKind {
     Text,
     Newline,
     Whitespace,
-    EOF,
+    Eof,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Token<'a> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Token {
     pub kind: TokenKind,
-    pub lexeme: &'a str,
+    pub lexeme: String,
 }
 
-impl<'a> Token<'a> {
-    pub fn new(kind: TokenKind, lexeme: &'a str) -> Self {
+impl Token {
+    pub fn new(kind: TokenKind, lexeme: String) -> Self {
         Token { kind, lexeme }
     }
 }
 
-pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token<'a>> {
+pub fn tokenize(input: &str) -> impl Iterator<Item = Token> {
     let mut cursor = CharCursor::new(input);
     std::iter::from_fn(move || {
         cursor.start = cursor.curr;
         match cursor.advance_token() {
             Token {
-                kind: TokenKind::EOF,
+                kind: TokenKind::Eof,
                 ..
             } => None,
             tok => Some(tok),
@@ -59,10 +59,10 @@ fn is_newline(c: Option<char>) -> bool {
     c.is_some_and(|c| c == '\n')
 }
 
-impl<'a> CharCursor<'a> {
-    pub fn advance_token(&mut self) -> Token<'a> {
+impl CharCursor<'_> {
+    pub fn advance_token(&mut self) -> Token {
         let Some(first_char) = self.advance() else {
-            return Token::new(TokenKind::EOF, "");
+            return Token::new(TokenKind::Eof, String::new());
         };
 
         let token = match first_char {
@@ -88,7 +88,7 @@ impl<'a> CharCursor<'a> {
             _ => self.text(),
         };
 
-        Token::new(token, self.lexeme())
+        Token::new(token, self.lexeme().to_string())
     }
 
     fn whitespace(&mut self) -> TokenKind {
@@ -130,7 +130,7 @@ mod tests {
     fn lex_quoted_text() {
         let cases = vec![(
             "this is some text",
-            Token::new(TokenKind::Text, "this is some text"),
+            Token::new(TokenKind::Text, "this is some text".to_string()),
         )];
 
         for (input, expected) in cases {

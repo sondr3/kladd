@@ -7,7 +7,7 @@ use crate::{
     token_cursor::TokenCursor,
 };
 
-pub fn parse<'a>(input: Vec<Token<'a>>) -> Document<'a> {
+pub fn parse(input: Vec<Token>) -> Document {
     let mut cursor = TokenCursor::new(input);
 
     cursor.eat_while(|t| {
@@ -35,11 +35,11 @@ pub fn parse<'a>(input: Vec<Token<'a>>) -> Document<'a> {
     Document { metadata, body }
 }
 
-impl<'a> TokenCursor<'a> {
-    pub fn advance_token(&mut self) -> Option<Option<BlockNode<'a>>> {
+impl TokenCursor {
+    pub fn advance_token(&mut self) -> Option<Option<BlockNode>> {
         skip_whitespace(self);
         match self.peek_kind() {
-            Some(TokenKind::EOF) => {
+            Some(TokenKind::Eof) => {
                 self.advance();
                 None
             }
@@ -53,13 +53,13 @@ impl<'a> TokenCursor<'a> {
     }
 }
 
-fn skip_whitespace<'a>(cursor: &mut TokenCursor<'a>) {
+fn skip_whitespace(cursor: &mut TokenCursor) {
     while let Some(TokenKind::Newline | TokenKind::Whitespace) = cursor.peek_kind() {
         cursor.advance();
     }
 }
 
-fn parse_comment<'a>(cursor: &mut TokenCursor<'a>) {
+fn parse_comment(cursor: &mut TokenCursor) {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::Dash));
     cursor.advance();
 
@@ -70,7 +70,7 @@ fn parse_comment<'a>(cursor: &mut TokenCursor<'a>) {
     cursor.advance();
 }
 
-fn parse_metadata<'a>(cursor: &mut TokenCursor<'a>) -> String {
+fn parse_metadata(cursor: &mut TokenCursor) -> String {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::MetadataMarker));
     cursor.advance();
 
@@ -78,10 +78,10 @@ fn parse_metadata<'a>(cursor: &mut TokenCursor<'a>) -> String {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::MetadataMarker));
     cursor.advance();
 
-    body.iter().map(|t| t.lexeme).collect()
+    body.iter().map(|t| t.lexeme.clone()).collect()
 }
 
-pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
+pub fn parse_inlines(cursor: &mut TokenCursor) -> InlineNode {
     match cursor.peek_kind() {
         Some(TokenKind::Comma)
         | Some(TokenKind::Text)
@@ -98,7 +98,7 @@ pub fn parse_inlines<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     }
 }
 
-pub fn parse_section<'a>(cursor: &mut TokenCursor<'a>) -> Option<BlockNode<'a>> {
+pub fn parse_section(cursor: &mut TokenCursor) -> Option<BlockNode> {
     let mut builder = NodeBuilder::new();
 
     skip_whitespace(cursor);
@@ -120,7 +120,7 @@ pub fn parse_section<'a>(cursor: &mut TokenCursor<'a>) -> Option<BlockNode<'a>> 
     Some(builder.build())
 }
 
-fn is_double_newline<'a>(cursor: &mut TokenCursor<'a>) -> bool {
+fn is_double_newline(cursor: &mut TokenCursor) -> bool {
     match cursor.peek() {
         Some(Token {
             kind: TokenKind::Newline,
@@ -130,7 +130,7 @@ fn is_double_newline<'a>(cursor: &mut TokenCursor<'a>) -> bool {
     }
 }
 
-pub fn parse_paragraph<'a>(cursor: &mut TokenCursor<'a>) -> BlockNode<'a> {
+pub fn parse_paragraph(cursor: &mut TokenCursor) -> BlockNode {
     let mut builder = NodeBuilder::new();
 
     let mut body = Vec::new();
@@ -143,7 +143,7 @@ pub fn parse_paragraph<'a>(cursor: &mut TokenCursor<'a>) -> BlockNode<'a> {
     builder.build()
 }
 
-pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
+pub fn parse_inline(cursor: &mut TokenCursor) -> InlineNode {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::At));
     cursor.advance();
 
@@ -153,7 +153,7 @@ pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
         Some(Token {
             kind: TokenKind::Text,
             lexeme,
-        }) => match *lexeme {
+        }) => match lexeme.as_ref() {
             "bold" | "strong" | "b" => InlineKind::Strong,
             "italic" | "i" => InlineKind::Italic,
             "underline" | "ul" => InlineKind::Underline,
@@ -161,7 +161,7 @@ pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
             "strikethrough" | "strike" | "st" => InlineKind::Strikethrough,
             "superscript" | "sup" => InlineKind::Superscript,
             "subscript" | "sub" => InlineKind::Subscript,
-            ident => InlineKind::Custom(ident),
+            ident => InlineKind::Custom(ident.to_string()),
         },
         Some(Token {
             kind: TokenKind::OpenCurly | TokenKind::OpenBrace,
@@ -194,7 +194,7 @@ pub fn parse_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     builder.build()
 }
 
-pub fn parse_simple_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
+pub fn parse_simple_inline(cursor: &mut TokenCursor) -> InlineNode {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
     cursor.advance();
 
@@ -226,7 +226,7 @@ pub fn parse_simple_inline<'a>(cursor: &mut TokenCursor<'a>) -> InlineNode<'a> {
     node_builder.build()
 }
 
-fn parse_attributes<'a>(cursor: &mut TokenCursor<'a>) -> Vec<Attribute<'a>> {
+fn parse_attributes(cursor: &mut TokenCursor) -> Vec<Attribute> {
     let mut res = Vec::new();
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
@@ -246,7 +246,7 @@ fn parse_attributes<'a>(cursor: &mut TokenCursor<'a>) -> Vec<Attribute<'a>> {
     res
 }
 
-fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
+fn parse_attribute(cursor: &mut TokenCursor) -> Attribute {
     let name = cursor
         .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
         .lexeme;
@@ -267,7 +267,7 @@ fn parse_attribute<'a>(cursor: &mut TokenCursor<'a>) -> Attribute<'a> {
     Attribute { name, value }
 }
 
-fn is_heading<'a>(cursor: &TokenCursor<'a>) -> bool {
+fn is_heading(cursor: &TokenCursor) -> bool {
     match (cursor.peek(), cursor.peek_nth(1)) {
         (
             Some(Token {
@@ -279,14 +279,14 @@ fn is_heading<'a>(cursor: &TokenCursor<'a>) -> bool {
                 lexeme,
             }),
         ) => matches!(
-            *lexeme,
+            lexeme.as_ref(),
             "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "title" | "section" | "subsection"
         ),
         _ => false,
     }
 }
 
-fn parse_heading<'a>(cursor: &mut TokenCursor<'a>) -> BlockNode<'a> {
+fn parse_heading(cursor: &mut TokenCursor) -> BlockNode {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::Bang));
     cursor.advance();
 
@@ -297,7 +297,7 @@ fn parse_heading<'a>(cursor: &mut TokenCursor<'a>) -> BlockNode<'a> {
         Token {
             kind: TokenKind::Text,
             lexeme,
-        } => match lexeme {
+        } => match lexeme.as_ref() {
             "h1" | "title" => 1,
             "h2" | "section" => 2,
             "h3" | "subsection" => 3,
@@ -334,7 +334,7 @@ mod tests {
     use super::*;
     use crate::lexer::tokenize;
 
-    fn map_inlines<'a, T, const N: usize>(nodes: [T; N]) -> Vec<Node<'a, T>> {
+    fn map_inlines<'a, T, const N: usize>(nodes: [T; N]) -> Vec<Node<T>> {
         nodes.into_iter().map(Node::from_node).collect()
     }
 
@@ -348,7 +348,10 @@ mod tests {
         assert_eq!(
             res,
             InlineNode::new(
-                Inline::Strong(vec![InlineNode::new(Inline::Text("body"), None)]),
+                Inline::Strong(vec![InlineNode::new(
+                    Inline::Text("body".to_string()),
+                    None
+                )]),
                 None
             )
         );
@@ -360,22 +363,24 @@ mod tests {
             (
                 "@{class=huge}[Huge]",
                 InlineNode::new(
-                    Inline::Naked(map_inlines([Inline::Text("Huge")])),
+                    Inline::Naked(map_inlines([Inline::Text("Huge".to_string())])),
                     Some(vec![Attribute::new(
-                        "class",
-                        AttributeValue::String("huge"),
+                        "class".to_string(),
+                        AttributeValue::String("huge".to_string()),
                     )]),
                 ),
             ),
             (
                 "@sup[super]",
-                InlineNode::from_node(Inline::Superscript(map_inlines([Inline::Text("super")]))),
+                InlineNode::from_node(Inline::Superscript(map_inlines([Inline::Text(
+                    "super".to_string(),
+                )]))),
             ),
             (
                 "@custom[yeet]",
                 InlineNode::from_node(Inline::Custom {
-                    name: "custom",
-                    body: map_inlines([Inline::Text("yeet")]),
+                    name: "custom".to_string(),
+                    body: map_inlines([Inline::Text("yeet".to_string())]),
                 }),
             ),
         ];
@@ -400,7 +405,10 @@ mod tests {
         assert_eq!(
             res,
             InlineNode::new(
-                Inline::Strong(vec![InlineNode::new(Inline::Text("bold "), None)]),
+                Inline::Strong(vec![InlineNode::new(
+                    Inline::Text("bold ".to_string()),
+                    None
+                )]),
                 None
             )
         );
@@ -416,16 +424,16 @@ mod tests {
         assert_eq!(
             res,
             InlineNode::from_node(Inline::Strong(vec![
-                InlineNode::from_node(Inline::Text("bold ")),
+                InlineNode::from_node(Inline::Text("bold ".to_string())),
                 InlineNode::from_node(Inline::Italic(vec![
-                    InlineNode::from_node(Inline::Text("italic ")),
+                    InlineNode::from_node(Inline::Text("italic ".to_string())),
                     InlineNode::from_node(Inline::Strikethrough(vec![InlineNode::from_node(
-                        Inline::Text("struck")
+                        Inline::Text("struck".to_string())
                     )])),
                 ]),),
-                InlineNode::from_node(Inline::Text(" ")),
+                InlineNode::from_node(Inline::Text(" ".to_string())),
                 InlineNode::from_node(Inline::Highlight(vec![InlineNode::from_node(
-                    Inline::Text("highlit"),
+                    Inline::Text("highlit".to_string()),
                 ),]),)
             ]),)
         )
@@ -439,10 +447,10 @@ mod tests {
                 BlockNode::from_node(Block::Heading {
                     level: 1,
                     body: map_inlines([
-                        Inline::Text("Hello"),
-                        Inline::Text(","),
-                        Inline::Text(" "),
-                        Inline::Text("world"),
+                        Inline::Text("Hello".to_string()),
+                        Inline::Text(",".to_string()),
+                        Inline::Text(" ".to_string()),
+                        Inline::Text("world".to_string()),
                     ]),
                 }),
             ),
@@ -451,9 +459,12 @@ mod tests {
                 BlockNode::new(
                     Block::Heading {
                         level: 2,
-                        body: map_inlines([Inline::Text("Red title")]),
+                        body: map_inlines([Inline::Text("Red title".to_string())]),
                     },
-                    Some(vec![Attribute::new("class", AttributeValue::String("red"))]),
+                    Some(vec![Attribute::new(
+                        "class".to_string(),
+                        AttributeValue::String("red".to_string()),
+                    )]),
                 ),
             ),
         ];
@@ -472,7 +483,7 @@ mod tests {
     fn test_parse_attributes() {
         let attributes = vec![
             ("name", AttributeValue::Boolean),
-            ("name2=value", AttributeValue::String("value")),
+            ("name2=value", AttributeValue::String("value".to_string())),
         ];
         for (attr, expected) in attributes {
             let lexer = tokenize(attr).collect::<Vec<_>>();
@@ -495,16 +506,16 @@ mod tests {
             res,
             vec![
                 Attribute {
-                    name: "name1",
-                    value: AttributeValue::String("value")
+                    name: "name1".to_string(),
+                    value: AttributeValue::String("value".to_string())
                 },
                 Attribute {
-                    name: "name2",
+                    name: "name2".to_string(),
                     value: AttributeValue::Boolean
                 },
                 Attribute {
-                    name: "name3",
-                    value: AttributeValue::String("value2 and more")
+                    name: "name3".to_string(),
+                    value: AttributeValue::String("value2 and more".to_string())
                 },
             ]
         );
