@@ -1,11 +1,11 @@
 use crate::{ast::Document, lexer::tokenize, parser::parse};
 
 pub mod ast;
-pub mod char_cursor;
+mod char_cursor;
 pub mod html;
-pub mod lexer;
-pub mod parser;
-pub mod token_cursor;
+mod lexer;
+mod parser;
+mod token_cursor;
 
 pub fn parse_kladd<'a>(input: &'a str) -> Document<'a> {
     let tokens = tokenize(input).collect::<Vec<_>>();
