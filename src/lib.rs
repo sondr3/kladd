@@ -7,8 +7,8 @@ mod lexer;
 mod parser;
 mod token_cursor;
 
-pub fn parse_kladd(input: &str) -> Document {
-    let tokens = tokenize(input).collect::<Vec<_>>();
+pub fn parse_kladd(input: String) -> Document {
+    let tokens = tokenize(&input).collect::<Vec<_>>();
     parse(tokens)
 }
 
