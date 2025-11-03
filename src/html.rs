@@ -1,6 +1,6 @@
 use crate::ast::{Block, BlockNode, Document, Inline, InlineNode};
 
-pub fn to_html(Document { body, .. }: Document) -> String {
+pub fn to_html(Document { body, .. }: &Document) -> String {
     let mut res = String::new();
 
     for elem in body {
@@ -10,7 +10,7 @@ pub fn to_html(Document { body, .. }: Document) -> String {
     res
 }
 
-fn level_to_heading(level: u8) -> &'static str {
+fn level_to_heading(level: &u8) -> &'static str {
     match level {
         1 => "h1",
         2 => "h2",
@@ -21,8 +21,8 @@ fn level_to_heading(level: u8) -> &'static str {
     }
 }
 
-fn htmlify_block(node: BlockNode, buf: &mut String) {
-    match node.node {
+fn htmlify_block(node: &BlockNode, buf: &mut String) {
+    match &node.node {
         Block::Heading { level, body } => {
             buf.push('<');
             buf.push_str(level_to_heading(level));
@@ -66,8 +66,8 @@ fn htmlify_block(node: BlockNode, buf: &mut String) {
     }
 }
 
-fn htmlify_inline(node: InlineNode, buf: &mut String) {
-    match node.node {
+fn htmlify_inline(node: &InlineNode, buf: &mut String) {
+    match &node.node {
         Inline::Text(str) => {
             buf.push_str(str);
         }

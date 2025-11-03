@@ -21,7 +21,7 @@ mod tests {
         let ast = parse(tokens);
         insta::assert_debug_snapshot!("ast", ast);
 
-        let html = to_html(ast);
+        let html = to_html(&ast);
         insta::assert_snapshot!("html", html);
     }
 }
