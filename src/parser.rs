@@ -83,11 +83,14 @@ fn parse_metadata(cursor: &mut TokenCursor) -> String {
 
 pub fn parse_inlines(cursor: &mut TokenCursor) -> InlineNode {
     match cursor.peek_kind() {
-        Some(TokenKind::Comma)
-        | Some(TokenKind::Text)
-        | Some(TokenKind::Whitespace)
-        | Some(TokenKind::DoubleQuote)
-        | Some(TokenKind::SingleQoute) => Node::new(Inline::Text(cursor.advance().lexeme), None),
+        Some(
+            TokenKind::Comma
+            | TokenKind::Text
+            | TokenKind::Whitespace
+            | TokenKind::DoubleQuote
+            | TokenKind::SingleQoute
+            | TokenKind::Bang,
+        ) => Node::new(Inline::Text(cursor.advance().lexeme), None),
         Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
         Some(TokenKind::At) => parse_inline(cursor),
         Some(TokenKind::Newline) => {
@@ -334,7 +337,7 @@ mod tests {
     use super::*;
     use crate::lexer::tokenize;
 
-    fn map_inlines<'a, T, const N: usize>(nodes: [T; N]) -> Vec<Node<T>> {
+    fn map_inlines<T, const N: usize>(nodes: [T; N]) -> Vec<Node<T>> {
         nodes.into_iter().map(Node::from_node).collect()
     }
 
