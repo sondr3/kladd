@@ -1,15 +1,74 @@
+use std::rc::Rc;
+
 use crate::lexer::{Token, TokenKind};
+
+#[derive(Debug, Default, Clone)]
+pub struct TokenStream(pub Rc<Vec<Token>>);
+
+impl TokenStream {
+    pub fn new(ts: Vec<Token>) -> Self {
+        TokenStream(Rc::new(ts))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn get(&self, idx: usize) -> Option<&Token> {
+        self.0.get(idx)
+    }
+
+    pub fn iter(&self) -> TokenStreamIter<'_> {
+        TokenStreamIter::new(self)
+    }
+}
+
+impl FromIterator<Token> for TokenStream {
+    fn from_iter<I: IntoIterator<Item = Token>>(iter: I) -> Self {
+        TokenStream::new(iter.into_iter().collect::<Vec<Token>>())
+    }
+}
+
+#[derive(Clone)]
+pub struct TokenStreamIter<'a> {
+    stream: &'a TokenStream,
+    index: usize,
+}
+
+impl<'a> TokenStreamIter<'a> {
+    pub fn new(stream: &'a TokenStream) -> Self {
+        TokenStreamIter { stream, index: 0 }
+    }
+
+    pub fn peek(&self) -> Option<&'a Token> {
+        self.stream.get(self.index)
+    }
+}
+
+impl<'a> Iterator for TokenStreamIter<'a> {
+    type Item = &'a Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.stream.get(self.index).inspect(|_| {
+            self.index += 1;
+        })
+    }
+}
 
 #[derive(Debug)]
 pub struct TokenCursor {
-    iter: Vec<Token>,
+    iter: TokenStream,
     idx: usize,
 }
 
 impl TokenCursor {
     pub fn new(input: Vec<Token>) -> Self {
         TokenCursor {
-            iter: input,
+            iter: TokenStream::from_iter(input),
             idx: 0,
         }
     }
@@ -32,13 +91,13 @@ impl TokenCursor {
 
     pub fn advance(&mut self) -> Token {
         debug_assert!(self.idx <= self.iter.len());
-        let t = self.iter[self.idx].clone();
+        let t = self.iter.0[self.idx].clone();
         self.idx += 1;
         t
     }
 
     pub fn is_at_end(&self) -> bool {
-        self.idx >= self.iter.len()
+        self.iter.is_empty()
     }
 
     pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token>) -> bool) -> Token {
