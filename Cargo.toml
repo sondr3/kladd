@@ -2,6 +2,12 @@
 name = "kladd"
 version = "0.1.0"
 edition = "2024"
+authors = ["Sondre Aasemoen <sondre@eons.io>"]
+description = "A weirdly personal markup language"
+documentation = "https://docs.rs/kladd"
+homepage = "https://github.com/sondr3/kladd"
+repository = "https://github.com/sondr3/kladd"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 

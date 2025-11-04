@@ -96,6 +96,10 @@ impl TokenCursor {
         t
     }
 
+    pub fn iter(&self) -> TokenStreamIter<'_> {
+        self.iter.iter()
+    }
+
     pub fn is_at_end(&self) -> bool {
         self.iter.is_empty()
     }
