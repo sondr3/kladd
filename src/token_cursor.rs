@@ -101,7 +101,7 @@ impl TokenCursor {
     }
 
     pub fn is_at_end(&self) -> bool {
-        self.iter.is_empty()
+        self.idx >= self.iter.len()
     }
 
     pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token>) -> bool) -> Token {
