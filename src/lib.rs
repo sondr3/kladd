@@ -1,6 +1,7 @@
 use crate::{ast::Document, lexer::tokenize, parser::parse};
 
 pub mod ast;
+pub mod ast_visualizer;
 mod char_cursor;
 pub mod html;
 mod lexer;
@@ -17,7 +18,10 @@ pub mod test_utils;
 
 #[cfg(test)]
 mod tests {
-    use crate::{html::to_html, lexer::tokenize, parser::parse, test_utils::TEST_INPUT};
+    use crate::{
+        ast_visualizer::visualize, html::to_html, lexer::tokenize, parser::parse,
+        test_utils::TEST_INPUT,
+    };
 
     #[test]
     fn it_works() {
@@ -27,6 +31,9 @@ mod tests {
 
         let ast = parse(tokens);
         insta::assert_debug_snapshot!("ast", ast);
+
+        let vizualised = visualize(&ast);
+        insta::assert_snapshot!("visualize", vizualised);
 
         let html = to_html(&ast);
         insta::assert_snapshot!("html", html);
