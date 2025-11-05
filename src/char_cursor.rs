@@ -17,6 +17,7 @@ impl<'a> CharCursor<'a> {
             start: 0,
             chars: input.chars(),
             source: input,
+            #[cfg(debug_assertions)]
             prev: None,
         }
     }
@@ -27,6 +28,18 @@ impl<'a> CharCursor<'a> {
 
     pub fn peek(&self) -> Option<char> {
         self.chars.clone().next()
+    }
+
+    pub fn prev(&self) -> Option<char> {
+        #[cfg(debug_assertions)]
+        {
+            self.prev
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            None
+        }
     }
 
     pub fn _peek_nth(&self, n: usize) -> Option<char> {

@@ -102,7 +102,7 @@ impl<'a> CharCursor<'a> {
     }
 
     fn metadata(&mut self) -> TokenKind {
-        debug_assert!(self.prev == Some('+'));
+        debug_assert!(self.prev() == Some('+'));
         self.eat_while(|c| c.is_some_and(|i| i == '+'));
         TokenKind::MetadataMarker
     }
