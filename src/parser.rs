@@ -42,6 +42,16 @@ pub enum ParseResult<T> {
     Nothing,
 }
 
+impl<T> ParseResult<T> {
+    pub fn unwrap(self) -> T {
+        match self {
+            ParseResult::Parsed(t) => t,
+            ParseResult::Skipped => panic!("tried to unwrap on a Skipped"),
+            ParseResult::Nothing => panic!("tried to unwrap on a Nothing"),
+        }
+    }
+}
+
 impl TokenCursor<'_> {
     pub fn advance_token(&mut self) -> ParseResult<BlockNode> {
         skip_whitespace(self);
@@ -98,7 +108,7 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> InlineNode {
             | TokenKind::SingleQoute
             | TokenKind::Bang,
         ) => Node::new(Inline::Text(cursor.advance().lexeme.to_string()), None),
-        Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
+        Some(TokenKind::OpenCurly) => parse_simple_inline(cursor).unwrap(),
         Some(TokenKind::At) => parse_inline(cursor),
         Some(TokenKind::Newline) => {
             cursor.advance();
@@ -177,9 +187,16 @@ fn is_double_newline(cursor: &mut TokenCursor) -> bool {
     }
 }
 
+fn is_special_token(kind: TokenKind) -> bool {
+    matches!(
+        kind,
+        TokenKind::At | TokenKind::OpenCurly | TokenKind::Newline
+    )
+}
+
 fn parse_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     let text: String = cursor
-        .advance_while(|c| is_inline_text(c))
+        .advance_while(|c| c.peek_kind().is_some_and(|k| !is_special_token(k)))
         .iter()
         .map(|t| t.lexeme)
         .collect();
@@ -197,6 +214,12 @@ pub fn parse_paragraph(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     }
 
     let mut builder = NodeBuilder::new();
+
+    // let inner = cursor
+    //     .take_while(|c| c.kind != TokenKind::Newline && c.lexeme != "\n\n")
+    //     .collect::<Vec<_>>();
+    //
+    // dbg!(inner);
 
     let mut body = Vec::new();
     while !is_double_newline(cursor) && !cursor.is_at_end() {
@@ -262,8 +285,26 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> InlineNode {
     builder.build()
 }
 
-pub fn parse_simple_inline(cursor: &mut TokenCursor) -> InlineNode {
-    debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
+fn is_valid_simple_inline(kind: Option<TokenKind>) -> bool {
+    matches!(
+        kind,
+        Some(
+            TokenKind::Slash
+                | TokenKind::Star
+                | TokenKind::Underscore
+                | TokenKind::Equals
+                | TokenKind::Tilde
+        )
+    )
+}
+
+pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
+    if cursor.peek_kind() != Some(TokenKind::OpenCurly)
+        && !is_valid_simple_inline(cursor.peek_nth_kind(1))
+    {
+        return ParseResult::Nothing;
+    }
+
     cursor.advance();
 
     let mut node_builder = NodeBuilder::new();
@@ -291,7 +332,7 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> InlineNode {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseCurly));
     cursor.advance();
 
-    node_builder.build()
+    ParseResult::Parsed(node_builder.build())
 }
 
 fn parse_attributes(cursor: &mut TokenCursor) -> Vec<Attribute> {
@@ -469,7 +510,7 @@ mod tests {
     fn test_parse_single_simple_inline() {
         let lexer = tokenize("{*bold *}").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
-        let res = parse_simple_inline(&mut cursor);
+        let res = parse_simple_inline(&mut cursor).unwrap();
 
         assert!(cursor.is_at_end());
         assert_eq!(
@@ -488,7 +529,7 @@ mod tests {
     fn test_parse_nested_simple_inlines() {
         let lexer = tokenize("{*bold {/italic {~struck~}/} {=highlit=}*}").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
-        let res = parse_simple_inline(&mut cursor);
+        let res = parse_simple_inline(&mut cursor).unwrap();
 
         assert!(cursor.is_at_end());
         assert_eq!(

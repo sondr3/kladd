@@ -102,13 +102,7 @@ Document {
                                 },
                                 Node {
                                     node: Text(
-                                        " ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "and ",
+                                        " and ",
                                     ),
                                     attributes: None,
                                 },
@@ -127,73 +121,7 @@ Document {
                                 },
                                 Node {
                                     node: Text(
-                                        " ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "content",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        ",",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "and a ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "\"",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "quoted",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "\"",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "'",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "text",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "'",
+                                        " content, and a \"quoted\" 'text'",
                                     ),
                                     attributes: None,
                                 },

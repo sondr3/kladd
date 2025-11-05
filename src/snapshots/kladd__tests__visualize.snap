@@ -16,21 +16,9 @@ doc
       str text = "With some "
       strong
         str text = "body"
-      str text = " "
-      str text = "and "
+      str text = " and "
       emph
         str text = "italic"
-      str text = " "
-      str text = "content"
-      str text = ","
-      str text = " "
-      str text = "and a "
-      str text = """
-      str text = "quoted"
-      str text = """
-      str text = " "
-      str text = "'"
-      str text = "text"
-      str text = "'"
+      str text = " content, and a "quoted" 'text'"
       softbreak
       str text = " "
