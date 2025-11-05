@@ -1,9 +1,21 @@
 use crate::lexer::{Token, TokenKind};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TokenCursor<'a> {
     iter: Vec<Token<'a>>,
     idx: usize,
+}
+
+impl<'a> Iterator for TokenCursor<'a> {
+    type Item = Token<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.is_at_end() {
+            None
+        } else {
+            Some(self.advance())
+        }
+    }
 }
 
 impl<'a> TokenCursor<'a> {
@@ -12,6 +24,10 @@ impl<'a> TokenCursor<'a> {
             iter: input,
             idx: 0,
         }
+    }
+
+    pub fn reset_pos(&mut self, pos: usize) {
+        self.idx = pos;
     }
 
     pub fn peek(&self) -> Option<&Token<'a>> {
@@ -39,6 +55,20 @@ impl<'a> TokenCursor<'a> {
 
     pub fn is_at_end(&self) -> bool {
         self.idx >= self.iter.len()
+    }
+
+    pub fn advance_while<F>(&mut self, parse_fn: F) -> Vec<Token<'a>>
+    where
+        F: Fn(&mut Self) -> bool,
+    {
+        let mut res = Vec::new();
+
+        while parse_fn(self) {
+            dbg!(self.peek());
+            res.push(self.advance());
+        }
+
+        res
     }
 
     pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token>) -> bool) -> Token<'a> {
