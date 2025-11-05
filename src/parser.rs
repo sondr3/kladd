@@ -41,7 +41,7 @@ pub enum ParseResult<T> {
     Nothing,
 }
 
-impl TokenCursor {
+impl TokenCursor<'_> {
     pub fn advance_token(&mut self) -> ParseResult<BlockNode> {
         skip_whitespace(self);
         match self.peek_kind() {
@@ -84,7 +84,7 @@ fn parse_metadata(cursor: &mut TokenCursor) -> String {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::MetadataMarker));
     cursor.advance();
 
-    body.iter().map(|t| t.lexeme.clone()).collect()
+    body.iter().map(|t| t.lexeme).collect()
 }
 
 pub fn parse_inlines(cursor: &mut TokenCursor) -> InlineNode {
@@ -96,7 +96,7 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> InlineNode {
             | TokenKind::DoubleQuote
             | TokenKind::SingleQoute
             | TokenKind::Bang,
-        ) => Node::new(Inline::Text(cursor.advance().lexeme), None),
+        ) => Node::new(Inline::Text(cursor.advance().lexeme.to_string()), None),
         Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
         Some(TokenKind::At) => parse_inline(cursor),
         Some(TokenKind::Newline) => {
@@ -162,7 +162,7 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> InlineNode {
         Some(Token {
             kind: TokenKind::Text,
             lexeme,
-        }) => match lexeme.as_ref() {
+        }) => match *lexeme {
             "bold" | "strong" | "b" => InlineKind::Strong,
             "italic" | "i" => InlineKind::Italic,
             "underline" | "ul" => InlineKind::Underline,
@@ -258,7 +258,8 @@ fn parse_attributes(cursor: &mut TokenCursor) -> Vec<Attribute> {
 fn parse_attribute(cursor: &mut TokenCursor) -> Attribute {
     let name = cursor
         .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
-        .lexeme;
+        .lexeme
+        .to_string();
 
     let value = match cursor.peek_kind() {
         Some(TokenKind::Comma) | None => AttributeValue::Boolean,
@@ -267,7 +268,8 @@ fn parse_attribute(cursor: &mut TokenCursor) -> Attribute {
             AttributeValue::String(
                 cursor
                     .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
-                    .lexeme,
+                    .lexeme
+                    .to_string(),
             )
         }
         Some(_) => panic!("invalid attribute value"),
@@ -288,7 +290,7 @@ fn is_heading(cursor: &TokenCursor) -> bool {
                 lexeme,
             }),
         ) => matches!(
-            lexeme.as_ref(),
+            *lexeme,
             "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "title" | "section" | "subsection"
         ),
         _ => false,
@@ -306,7 +308,7 @@ fn parse_heading(cursor: &mut TokenCursor) -> BlockNode {
         Token {
             kind: TokenKind::Text,
             lexeme,
-        } => match lexeme.as_ref() {
+        } => match lexeme {
             "h1" | "title" => 1,
             "h2" | "section" => 2,
             "h3" | "subsection" => 3,
