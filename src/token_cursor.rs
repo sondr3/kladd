@@ -64,7 +64,6 @@ impl<'a> TokenCursor<'a> {
         let mut res = Vec::new();
 
         while parse_fn(self) {
-            dbg!(self.peek());
             res.push(self.advance());
         }
 
