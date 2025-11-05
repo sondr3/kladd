@@ -26,29 +26,35 @@ pub fn parse(input: Vec<Token>) -> Document {
     let mut body = Vec::new();
     loop {
         match cursor.advance_token() {
-            Some(Some(t)) => body.push(t),
-            Some(None) => continue,
-            None => break,
+            ParseResult::Parsed(t) => body.push(t),
+            ParseResult::Skipped => continue,
+            ParseResult::Nothing => break,
         }
     }
 
     Document { metadata, body }
 }
 
+pub enum ParseResult<T> {
+    Parsed(T),
+    Skipped,
+    Nothing,
+}
+
 impl TokenCursor {
-    pub fn advance_token(&mut self) -> Option<Option<BlockNode>> {
+    pub fn advance_token(&mut self) -> ParseResult<BlockNode> {
         skip_whitespace(self);
         match self.peek_kind() {
             Some(TokenKind::Eof) => {
                 self.advance();
-                None
+                ParseResult::Nothing
             }
             Some(TokenKind::Dash) => {
                 parse_comment(self);
-                Some(None)
+                ParseResult::Skipped
             }
-            None => None,
-            _ => Some(parse_section(self)),
+            None => ParseResult::Nothing,
+            _ => parse_section(self),
         }
     }
 }
@@ -101,12 +107,12 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> InlineNode {
     }
 }
 
-pub fn parse_section(cursor: &mut TokenCursor) -> Option<BlockNode> {
+pub fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     let mut builder = NodeBuilder::new();
 
     skip_whitespace(cursor);
     if !is_heading(cursor) {
-        return None;
+        return ParseResult::Nothing;
     }
 
     let mut body = Vec::new();
@@ -120,7 +126,7 @@ pub fn parse_section(cursor: &mut TokenCursor) -> Option<BlockNode> {
     }
 
     builder.with_node(Block::Section(body));
-    Some(builder.build())
+    ParseResult::Parsed(builder.build())
 }
 
 fn is_double_newline(cursor: &mut TokenCursor) -> bool {
