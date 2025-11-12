@@ -137,6 +137,11 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
                 htmlify_inline(node, buf);
             }
         }
+        Inline::Code(code) => {
+            buf.push_str("<code>");
+            buf.push_str(code);
+            buf.push_str("</code>");
+        }
         Inline::Custom { body, .. } => {
             buf.push_str(r#"<span>"#);
             for node in body {

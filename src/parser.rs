@@ -1,7 +1,7 @@
 use crate::{
     ast::{
         Attribute, AttributeValue, Block, BlockNode, Document, Inline, InlineKind, InlineNode,
-        Node, NodeBuilder,
+        Inlines, Node, NodeBuilder,
     },
     lexer::{Token, TokenKind},
     token_cursor::TokenCursor,
@@ -358,6 +358,7 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             "strikethrough" | "strike" | "st" => InlineKind::Strikethrough,
             "superscript" | "sup" => InlineKind::Superscript,
             "subscript" | "sub" => InlineKind::Subscript,
+            "code" => InlineKind::Code,
             ident => InlineKind::Custom(ident.to_string()),
         },
         Some(Token {
@@ -378,22 +379,57 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
     cursor.advance();
 
+    if kind == InlineKind::Code {
+        let body = parse_code_inline(cursor);
+        builder.with_node(Inline::Code(body));
+    } else {
+        let body = parse_inline_body(cursor);
+        builder.with_node(Inline::from_kind(kind, body));
+    }
+
+    debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
+    cursor.advance();
+
+    ParseResult::Parsed(builder.build())
+}
+
+fn parse_inline_body(cursor: &mut TokenCursor) -> Inlines {
     let mut body = Vec::new();
     while cursor.peek_kind() != Some(TokenKind::CloseBrace) && !cursor.is_at_end() {
         match parse_inlines(cursor) {
             ParseResult::Parsed(p) => body.push(p),
             ParseResult::Skipped => todo!(),
             ParseResult::Nothing => todo!(),
-            ParseResult::Error(_) => todo!(),
+            ParseResult::Error(e) => panic!("{:?}", e),
         }
     }
+    body
+}
 
-    debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
-    cursor.advance();
+fn parse_code_inline(cursor: &mut TokenCursor) -> String {
+    let mut body = String::new();
+    let mut counter = 1;
 
-    builder.with_node(Inline::from_kind(kind, body));
+    while let Some(tok) = cursor.peek() {
+        match tok.kind {
+            TokenKind::OpenBrace => {
+                counter += 1;
+            }
+            TokenKind::CloseBrace => {
+                counter -= 1;
+            }
+            _ => {}
+        }
 
-    ParseResult::Parsed(builder.build())
+        if counter == 0 {
+            break;
+        }
+
+        body.push_str(tok.lexeme);
+        cursor.advance();
+    }
+
+    body
 }
 
 fn is_valid_simple_inline(kind: Option<TokenKind>) -> bool {
@@ -702,6 +738,35 @@ mod tests {
             let lexer = tokenize(attr).collect::<Vec<_>>();
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_heading(&mut cursor).unwrap();
+
+            assert!(cursor.is_at_end());
+            assert_eq!(res, expected);
+        }
+    }
+
+    #[test]
+    fn test_parse_code() {
+        let inputs = vec![
+            (
+                "@code[fn hello(world: &str) -> {}]",
+                InlineNode::from_node(Inline::Code("fn hello(world: &str) -> {}".to_owned())),
+            ),
+            (
+                "@code{language=css}[p[data-attr] {  }]",
+                InlineNode::new(
+                    Inline::Code("p[data-attr] {  }".to_owned()),
+                    Some(vec![Attribute::new(
+                        "language".to_owned(),
+                        AttributeValue::String("css".to_owned()),
+                    )]),
+                ),
+            ),
+        ];
+
+        for (attr, expected) in inputs {
+            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let mut cursor = TokenCursor::new(lexer);
+            let res = parse_inline(&mut cursor).unwrap();
 
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);

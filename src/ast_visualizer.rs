@@ -204,6 +204,16 @@ fn visualize_inline(node: &InlineNode, buf: &mut String, indent: usize) {
                 visualize_inline(node, buf, indent + 2);
             }
         }
+        Inline::Code(code) => {
+            buf.push_str(&" ".repeat(indent));
+            buf.push('@');
+            buf.push_str("code");
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('\n');
+            buf.push_str(code);
+        }
         Inline::Custom { body, name } => {
             buf.push_str(&" ".repeat(indent));
             buf.push('@');

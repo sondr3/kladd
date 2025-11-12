@@ -127,6 +127,7 @@ pub enum InlineKind {
     Superscript,
     Subscript,
     Naked,
+    Code,
     Custom(String),
 }
 
@@ -145,6 +146,7 @@ pub enum Inline {
     Subscript(Inlines),
     Naked(Inlines),
     Quoted(Quote, Inlines),
+    Code(String),
     Custom { name: String, body: Inlines },
     Softbreak,
     Hardbreak,
@@ -162,6 +164,7 @@ impl Inline {
             InlineKind::Subscript => Inline::Subscript(body),
             InlineKind::Naked => Inline::Naked(body),
             InlineKind::Custom(ident) => Inline::Custom { name: ident, body },
+            InlineKind::Code => panic!("cannot construct a @code from this method"),
         }
     }
 }
