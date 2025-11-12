@@ -26,10 +26,6 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
-    pub fn reset_pos(&mut self, pos: usize) {
-        self.idx = pos;
-    }
-
     pub fn peek(&self) -> Option<&Token<'a>> {
         self.iter.get(self.idx)
     }

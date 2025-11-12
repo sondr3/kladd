@@ -129,40 +129,6 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     }
 }
 
-fn is_naked_inline(cursor: &TokenCursor) -> bool {
-    cursor.peek_kind() == Some(TokenKind::At)
-        && matches!(
-            cursor.peek_nth_kind(1),
-            Some(TokenKind::OpenCurly | TokenKind::OpenBrace)
-        )
-}
-
-fn is_inline(cursor: &TokenCursor) -> bool {
-    cursor.peek_kind() == Some(TokenKind::At)
-        && cursor.peek_nth_kind(1) == Some(TokenKind::Text)
-        && matches!(
-            cursor.peek_nth_kind(2),
-            Some(TokenKind::OpenCurly | TokenKind::OpenBrace)
-        )
-}
-
-fn is_inline_text(cursor: &TokenCursor) -> bool {
-    cursor.peek_kind().is_some_and(|t| t == TokenKind::Text)
-}
-
-fn to_inline(tok: &Token) -> InlineNode {
-    match &tok.kind {
-        TokenKind::Comma
-        | TokenKind::Text
-        | TokenKind::Whitespace
-        | TokenKind::DoubleQuote
-        | TokenKind::SingleQoute
-        | TokenKind::Bang => Node::new(Inline::Text(tok.lexeme.to_string()), None),
-        TokenKind::Newline => Node::new(Inline::Softbreak, None),
-        t => panic!("{:?} is not yet handled", t),
-    }
-}
-
 pub fn parse_bang_node(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     if is_heading(cursor) {
         ParseResult::Parsed(parse_heading(cursor))
