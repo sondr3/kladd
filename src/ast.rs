@@ -106,6 +106,7 @@ pub type Blocks = Vec<BlockNode>;
 pub enum Block {
     Heading { level: u8, body: Inlines },
     Paragraph(Inlines),
+    Block(Blocks),
     Section(Blocks),
     Div(Blocks),
 }

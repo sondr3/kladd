@@ -45,6 +45,11 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
 
             buf.push_str("</p>");
         }
+        Block::Block(nodes) => {
+            for node in nodes {
+                htmlify_block(node, buf);
+            }
+        }
         Block::Section(nodes) => {
             buf.push_str("<section>");
 

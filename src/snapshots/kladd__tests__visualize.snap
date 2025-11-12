@@ -3,9 +3,8 @@ source: src/lib.rs
 expression: vizualised
 ---
 doc
-  section 
-    heading level=1 some=value, other=value2, 
-      str text = "Header"
+  heading level=1 some=value, other=value2, 
+    str text = "Header"
     p 
       strong
         str text = "bold "

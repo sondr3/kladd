@@ -8,37 +8,37 @@ Document {
     ),
     body: [
         Node {
-            node: Section(
-                [
+            node: Heading {
+                level: 1,
+                body: [
                     Node {
-                        node: Heading {
-                            level: 1,
-                            body: [
-                                Node {
-                                    node: Text(
-                                        "Header",
-                                    ),
-                                    attributes: None,
-                                },
-                            ],
-                        },
-                        attributes: Some(
-                            [
-                                Attribute {
-                                    name: "some",
-                                    value: String(
-                                        "value",
-                                    ),
-                                },
-                                Attribute {
-                                    name: "other",
-                                    value: String(
-                                        "value2",
-                                    ),
-                                },
-                            ],
+                        node: Text(
+                            "Header",
+                        ),
+                        attributes: None,
+                    },
+                ],
+            },
+            attributes: Some(
+                [
+                    Attribute {
+                        name: "some",
+                        value: String(
+                            "value",
                         ),
                     },
+                    Attribute {
+                        name: "other",
+                        value: String(
+                            "value2",
+                        ),
+                    },
+                ],
+            ),
+        },
+        Node {
+            node: Block(
+                [
                     Node {
                         node: Paragraph(
                             [

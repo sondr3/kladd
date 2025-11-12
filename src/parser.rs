@@ -72,7 +72,8 @@ impl TokenCursor<'_> {
                 ParseResult::Skipped
             }
             None => ParseResult::Nothing,
-            _ => parse_section(self),
+            Some(TokenKind::Bang) => parse_bang_node(self),
+            _ => parse_block(self),
         }
     }
 }
@@ -162,18 +163,19 @@ fn to_inline(tok: &Token) -> InlineNode {
     }
 }
 
-pub fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
+pub fn parse_bang_node(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
+    if is_heading(cursor) {
+        ParseResult::Parsed(parse_heading(cursor))
+    } else {
+        todo!()
+    }
+}
+
+pub fn parse_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     let mut builder = NodeBuilder::new();
 
     skip_whitespace(cursor);
-    if !is_heading(cursor) {
-        return ParseResult::Nothing;
-    }
-
     let mut body = Vec::new();
-
-    body.push(parse_heading(cursor));
-    skip_whitespace(cursor);
 
     while !is_heading(cursor) && !cursor.is_at_end() {
         match parse_paragraph(cursor) {
@@ -183,7 +185,7 @@ pub fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
         skip_whitespace(cursor);
     }
 
-    builder.with_node(Block::Section(body));
+    builder.with_node(Block::Block(body));
     ParseResult::Parsed(builder.build())
 }
 

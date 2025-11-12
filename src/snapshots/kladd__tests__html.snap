@@ -2,5 +2,5 @@
 source: src/lib.rs
 expression: html
 ---
-<section><h1>Header</h1><p><strong>bold <em>italic</em></strong> </p><p>With some <strong>body</strong> and <em>italic</em> content, and a "quoted" 'text'
- </p></section>
+<h1>Header</h1><p><strong>bold <em>italic</em></strong> </p><p>With some <strong>body</strong> and <em>italic</em> content, and a "quoted" 'text'
+ </p>
