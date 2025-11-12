@@ -34,18 +34,26 @@ add arbitrary @{class=red}[classes] to text.
 - Strikethrough: `{~strikethrough~}`
 - Comment: `{% comment %}`
 
-## Block elements
+## Block line elements
 
 ```text
 !h1{class=bold}[This is a header]
 
 !h2{class="can also be quoted", id=some-id}[Another header]
+```
 
-!code{language=rust}[
+## Block elements
+
+```
+#code{language=rust}
 fn main() {
   println!("Hello, world!");
 }
-]
+#code
+
+#section{attr=but}
+!h2[Title]
+#section
 ```
 
 ## Comments 

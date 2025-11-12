@@ -3,14 +3,16 @@ source: src/lib.rs
 expression: vizualised
 ---
 doc
-  heading level=1 some=value, other=value2, 
-    str text = "Header"
+  section class=important, 
+    heading level=1 some=value, other=value2, 
+      str text = "Header"
     p 
       strong
         str text = "bold "
         emph
           str text = "italic"
       str text = " "
+      softbreak
     p 
       str text = "With some "
       strong

@@ -8,37 +8,37 @@ Document {
     ),
     body: [
         Node {
-            node: Heading {
-                level: 1,
-                body: [
+            node: Section(
+                [
                     Node {
-                        node: Text(
-                            "Header",
+                        node: Heading {
+                            level: 1,
+                            body: [
+                                Node {
+                                    node: Text(
+                                        "Header",
+                                    ),
+                                    attributes: None,
+                                },
+                            ],
+                        },
+                        attributes: Some(
+                            [
+                                Attribute {
+                                    name: "some",
+                                    value: String(
+                                        "value",
+                                    ),
+                                },
+                                Attribute {
+                                    name: "other",
+                                    value: String(
+                                        "value2",
+                                    ),
+                                },
+                            ],
                         ),
-                        attributes: None,
                     },
-                ],
-            },
-            attributes: Some(
-                [
-                    Attribute {
-                        name: "some",
-                        value: String(
-                            "value",
-                        ),
-                    },
-                    Attribute {
-                        name: "other",
-                        value: String(
-                            "value2",
-                        ),
-                    },
-                ],
-            ),
-        },
-        Node {
-            node: Block(
-                [
                     Node {
                         node: Paragraph(
                             [
@@ -74,10 +74,30 @@ Document {
                                     ),
                                     attributes: None,
                                 },
+                                Node {
+                                    node: Softbreak,
+                                    attributes: None,
+                                },
                             ],
                         ),
                         attributes: None,
                     },
+                ],
+            ),
+            attributes: Some(
+                [
+                    Attribute {
+                        name: "class",
+                        value: String(
+                            "important",
+                        ),
+                    },
+                ],
+            ),
+        },
+        Node {
+            node: Block(
+                [
                     Node {
                         node: Paragraph(
                             [

@@ -73,6 +73,7 @@ impl TokenCursor<'_> {
             }
             None => ParseResult::Nothing,
             Some(TokenKind::Bang) => parse_bang_node(self),
+            Some(TokenKind::Hashbang) => barse_hash_block(self),
             _ => parse_block(self),
         }
     }
@@ -131,10 +132,106 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
 
 pub fn parse_bang_node(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     if is_heading(cursor) {
-        ParseResult::Parsed(parse_heading(cursor))
+        parse_heading(cursor)
     } else {
         todo!()
     }
+}
+
+pub fn barse_hash_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
+    if is_section(cursor) {
+        parse_section(cursor)
+    } else {
+        todo!()
+    }
+}
+
+fn is_section(cursor: &TokenCursor) -> bool {
+    matches!((cursor.peek(), cursor.peek_nth(1)), (
+            Some(Token {
+                kind: TokenKind::Hashbang,
+                ..
+            }),
+            Some(Token {
+                kind: TokenKind::Text,
+                lexeme,
+            }),
+        ) if *lexeme == "section")
+}
+
+fn is_block_end(cursor: &mut TokenCursor) -> bool {
+    matches!(
+        (cursor.peek(), cursor.peek_nth(1), cursor.peek_nth(2)),
+        (
+            Some(Token {
+                kind: TokenKind::Hashbang,
+                ..
+            }),
+            Some(Token {
+                kind: TokenKind::Text,
+                ..
+            }),
+            Some(Token {
+                kind: TokenKind::Newline,
+                ..
+            }),
+        )
+    )
+}
+
+fn is_section_end(cursor: &mut TokenCursor, curr_section: &str) -> bool {
+    matches!((cursor.peek(), cursor.peek_nth(1), cursor.peek_nth(2)), (
+            Some(Token {
+                kind: TokenKind::Hashbang,
+                ..
+            }),
+            Some(Token {
+                kind: TokenKind::Text,
+                lexeme,
+            }),
+            Some(Token {
+                kind: TokenKind::Newline,
+                ..
+            }),
+        ) if *lexeme == curr_section)
+}
+
+fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
+    if cursor.peek_kind() != Some(TokenKind::Hashbang) {
+        return ParseResult::Nothing;
+    }
+
+    cursor.advance();
+    let section = cursor.advance().lexeme;
+
+    let mut builder = NodeBuilder::new();
+    if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
+        builder.with_attributes(parse_attributes(cursor));
+    }
+
+    skip_whitespace(cursor);
+    let mut body = Vec::new();
+
+    while !is_section_end(cursor, section) && !cursor.is_at_end() {
+        match try_parsers(vec![parse_paragraph, parse_heading], cursor) {
+            ParseResult::Parsed(p) => body.push(p),
+            ParseResult::Skipped => continue,
+            ParseResult::Nothing => continue,
+            ParseResult::Error(e) => panic!("{:?}", e),
+        }
+        skip_whitespace(cursor);
+    }
+
+    if !is_section_end(cursor, section) {
+        return ParseResult::Error("No section end found".into());
+    }
+
+    cursor.advance();
+    cursor.advance();
+
+    builder.with_node(Block::Section(body));
+
+    ParseResult::Parsed(builder.build())
 }
 
 pub fn parse_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
@@ -168,7 +265,7 @@ fn is_double_newline(cursor: &mut TokenCursor) -> bool {
 fn is_special_token(kind: TokenKind) -> bool {
     matches!(
         kind,
-        TokenKind::At | TokenKind::OpenCurly | TokenKind::Newline
+        TokenKind::At | TokenKind::OpenCurly | TokenKind::Newline | TokenKind::Hashbang
     )
 }
 
@@ -223,7 +320,7 @@ pub fn parse_paragraph(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     let mut builder = NodeBuilder::new();
 
     let mut body = Vec::new();
-    while !is_double_newline(cursor) && !cursor.is_at_end() {
+    while !is_block_end(cursor) && !is_double_newline(cursor) && !cursor.is_at_end() {
         match try_parsers(
             vec![parse_text, parse_simple_inline, parse_inline, parse_newline],
             cursor,
@@ -408,15 +505,12 @@ fn is_heading(cursor: &TokenCursor) -> bool {
                 kind: TokenKind::Text,
                 lexeme,
             }),
-        ) => matches!(
-            *lexeme,
-            "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "title" | "section" | "subsection"
-        ),
+        ) => matches!(*lexeme, "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "title"),
         _ => false,
     }
 }
 
-fn parse_heading(cursor: &mut TokenCursor) -> BlockNode {
+fn parse_heading(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::Bang));
     cursor.advance();
 
@@ -429,8 +523,8 @@ fn parse_heading(cursor: &mut TokenCursor) -> BlockNode {
             lexeme,
         } => match lexeme {
             "h1" | "title" => 1,
-            "h2" | "section" => 2,
-            "h3" | "subsection" => 3,
+            "h2" => 2,
+            "h3" => 3,
             "h4" => 4,
             "h5" => 5,
             "h6" => 6,
@@ -461,7 +555,7 @@ fn parse_heading(cursor: &mut TokenCursor) -> BlockNode {
 
     builder.with_node(Block::Heading { level, body });
 
-    builder.build()
+    ParseResult::Parsed(builder.build())
 }
 
 #[cfg(test)]
@@ -607,7 +701,7 @@ mod tests {
         for (attr, expected) in inputs {
             let lexer = tokenize(attr).collect::<Vec<_>>();
             let mut cursor = TokenCursor::new(lexer);
-            let res = parse_heading(&mut cursor);
+            let res = parse_heading(&mut cursor).unwrap();
 
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);

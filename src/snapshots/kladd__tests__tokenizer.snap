@@ -64,6 +64,38 @@ expression: tokens
         lexeme: "\n\n",
     },
     Token {
+        kind: Hashbang,
+        lexeme: "#",
+    },
+    Token {
+        kind: Text,
+        lexeme: "section",
+    },
+    Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Text,
+        lexeme: "class",
+    },
+    Token {
+        kind: Equals,
+        lexeme: "=",
+    },
+    Token {
+        kind: Text,
+        lexeme: "important",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
         kind: Bang,
         lexeme: "!",
     },
@@ -170,6 +202,18 @@ expression: tokens
     Token {
         kind: Whitespace,
         lexeme: " ",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
+        kind: Hashbang,
+        lexeme: "#",
+    },
+    Token {
+        kind: Text,
+        lexeme: "section",
     },
     Token {
         kind: Newline,
