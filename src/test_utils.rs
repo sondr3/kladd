@@ -12,5 +12,5 @@ metadata = things
 {*bold {/italic/}*} 
 #section
 
-With some @bold[body] and {/italic/} content, and a "quoted" 'text'
+With some @bold[body] and {/italic/} content, and a "quoted" 'text', and <escaped>.
  "#;

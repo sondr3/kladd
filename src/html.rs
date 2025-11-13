@@ -1,6 +1,6 @@
 use std::{collections::HashSet, sync::LazyLock};
 
-use htmlize::escape_attribute;
+use htmlize::{escape_attribute, escape_text};
 
 use crate::ast::{
     Attribute, AttributeValue, Attributes, Block, BlockNode, Document, Inline, InlineNode,
@@ -133,9 +133,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
 
 fn htmlify_inline(node: &InlineNode, buf: &mut String) {
     match &node.node {
-        Inline::Text(str) => {
-            buf.push_str(str);
-        }
+        Inline::Text(str) => buf.push_str(&escape_text(str)),
         Inline::Strong(nodes) => {
             buf.push_str("<strong>");
             for node in nodes {

@@ -20,6 +20,6 @@ doc
       str text = " and "
       emph
         str text = "italic"
-      str text = " content, and a "quoted" 'text'"
+      str text = " content, and a "quoted" 'text', and <escaped>."
       softbreak
       str text = " "

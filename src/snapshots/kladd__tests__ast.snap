@@ -141,7 +141,7 @@ Document {
                                 },
                                 Node {
                                     node: Text(
-                                        " content, and a \"quoted\" 'text'",
+                                        " content, and a \"quoted\" 'text', and <escaped>.",
                                     ),
                                     attributes: None,
                                 },

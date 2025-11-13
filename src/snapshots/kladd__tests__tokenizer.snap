@@ -320,6 +320,30 @@ expression: tokens
         lexeme: "'",
     },
     Token {
+        kind: Comma,
+        lexeme: ",",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "and ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "<escaped",
+    },
+    Token {
+        kind: Text,
+        lexeme: ">",
+    },
+    Token {
+        kind: Text,
+        lexeme: ".",
+    },
+    Token {
         kind: Newline,
         lexeme: "\n",
     },
