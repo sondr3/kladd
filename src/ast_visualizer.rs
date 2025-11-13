@@ -15,6 +15,7 @@ pub fn visualize(doc: &Document) -> String {
 fn write_attributes(attrs: &Attributes, buf: &mut String) {
     let len = attrs.len();
     for (i, attr) in attrs.iter().enumerate() {
+        buf.push(' ');
         buf.push_str(&attr.name);
         buf.push('=');
         match &attr.value {
@@ -23,7 +24,7 @@ fn write_attributes(attrs: &Attributes, buf: &mut String) {
         }
 
         if i < len {
-            buf.push_str(", ");
+            buf.push(',');
         }
     }
 }
@@ -34,7 +35,6 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
             buf.push_str(&" ".repeat(indent));
             buf.push_str("heading level=");
             buf.push_str(&level.to_string());
-            buf.push(' ');
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
@@ -46,7 +46,7 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
         }
         Block::Paragraph(nodes) => {
             buf.push_str(&" ".repeat(indent));
-            buf.push_str("p ");
+            buf.push('p');
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
@@ -63,7 +63,7 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
         }
         Block::Section(nodes) => {
             buf.push_str(&" ".repeat(indent));
-            buf.push_str("section ");
+            buf.push_str("section");
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
@@ -75,7 +75,7 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
         }
         Block::Div(nodes) => {
             buf.push_str(&" ".repeat(indent));
-            buf.push_str("div ");
+            buf.push_str("div");
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
