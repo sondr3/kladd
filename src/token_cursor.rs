@@ -6,18 +6,6 @@ pub struct TokenCursor<'a> {
     idx: usize,
 }
 
-impl<'a> Iterator for TokenCursor<'a> {
-    type Item = Token<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.is_at_end() {
-            None
-        } else {
-            Some(self.advance())
-        }
-    }
-}
-
 impl<'a> TokenCursor<'a> {
     pub fn new(input: Vec<Token<'a>>) -> Self {
         TokenCursor {
@@ -75,13 +63,13 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
-    pub fn eat_while(
-        &mut self,
-        mut predicate: impl FnMut(Option<&Token>) -> bool,
-    ) -> Vec<Token<'a>> {
+    pub fn eat_while(&mut self, mut predicate: impl FnMut(&Token) -> bool) -> Vec<Token<'a>> {
         let mut res = Vec::new();
 
-        while predicate(self.peek()) {
+        while predicate(match self.peek() {
+            Some(t) => t,
+            None => return res,
+        }) {
             res.push(self.advance());
         }
 

@@ -10,9 +10,7 @@ use crate::{
 pub fn parse(input: Vec<Token>) -> Document {
     let mut cursor = TokenCursor::new(input);
 
-    cursor.eat_while(|t| {
-        t.is_some_and(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace))
-    });
+    cursor.eat_while(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace));
 
     let metadata = if cursor
         .peek()
@@ -92,7 +90,7 @@ fn parse_comment(cursor: &mut TokenCursor) {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::Dash));
     cursor.advance();
 
-    cursor.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::Newline));
+    cursor.eat_while(|t| t.kind != TokenKind::Newline);
     cursor.advance();
 }
 
@@ -100,7 +98,7 @@ fn parse_metadata(cursor: &mut TokenCursor) -> String {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::MetadataMarker));
     cursor.advance();
 
-    let body = cursor.eat_while(|t| t.is_some_and(|i| i.kind != TokenKind::MetadataMarker));
+    let body = cursor.eat_while(|t| t.kind != TokenKind::MetadataMarker);
     debug_assert!(cursor.peek_kind() == Some(TokenKind::MetadataMarker));
     cursor.advance();
 
@@ -519,9 +517,10 @@ fn parse_attribute(cursor: &mut TokenCursor) -> Attribute {
             cursor.advance();
             AttributeValue::String(
                 cursor
-                    .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
-                    .lexeme
-                    .to_string(),
+                    .eat_while(|k| !matches!(k.kind, TokenKind::Comma | TokenKind::CloseCurly))
+                    .iter()
+                    .map(|k| k.lexeme)
+                    .collect(),
             )
         }
         Some(_) => panic!("invalid attribute value"),
@@ -778,6 +777,10 @@ mod tests {
         let attributes = vec![
             ("name", AttributeValue::Boolean),
             ("name2=value", AttributeValue::String("value".to_string())),
+            (
+                "href=/some/other/page.html",
+                AttributeValue::String("/some/other/page.html".to_string()),
+            ),
         ];
         for (attr, expected) in attributes {
             let lexer = tokenize(attr).collect::<Vec<_>>();
