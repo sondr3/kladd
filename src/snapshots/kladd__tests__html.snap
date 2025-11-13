@@ -2,6 +2,6 @@
 source: src/lib.rs
 expression: html
 ---
-<section><h1>Header</h1><p><strong>bold <em>italic</em></strong> 
+<section class="important"><h1 data-some="value" data-other="value2">Header</h1><p><strong>bold <em>italic</em></strong> 
 </p></section><p>With some <strong>body</strong> and <em>italic</em> content, and a "quoted" 'text'
  </p>

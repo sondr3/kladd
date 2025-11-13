@@ -1,4 +1,10 @@
-use crate::ast::{Block, BlockNode, Document, Inline, InlineNode};
+use std::{collections::HashSet, sync::LazyLock};
+
+use htmlize::escape_attribute;
+
+use crate::ast::{
+    Attribute, AttributeValue, Attributes, Block, BlockNode, Document, Inline, InlineNode,
+};
 
 pub fn to_html(Document { body, .. }: &Document) -> String {
     let mut res = String::new();
@@ -21,11 +27,55 @@ fn level_to_heading(level: u8) -> &'static str {
     }
 }
 
+static DEFAULT_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    let mut set = HashSet::new();
+    set.insert("alt");
+    set.insert("background");
+    set.insert("checked");
+    set.insert("class");
+    set.insert("dir");
+    set.insert("disabled");
+    set.insert("hidden");
+    set.insert("id");
+    set.insert("style");
+    set.insert("title");
+    set
+});
+
+fn write_attribute(attr: &Attribute, buf: &mut String, is_default: bool) {
+    buf.push(' ');
+    if !is_default {
+        buf.push_str("data-");
+    }
+    buf.push_str(&attr.name);
+
+    match &attr.value {
+        AttributeValue::String(v) => {
+            buf.push('=');
+            buf.push('"');
+            buf.push_str(&escape_attribute::<&str>(v));
+            buf.push('"');
+        }
+        AttributeValue::Boolean => todo!(),
+    }
+}
+
+fn write_attributes(attrs: &Attributes, buf: &mut String) {
+    for attr in attrs {
+        let is_default = DEFAULT_ATTRIBUTES.contains(&attr.name.as_ref());
+        write_attribute(attr, buf, is_default);
+    }
+}
+
 fn htmlify_block(node: &BlockNode, buf: &mut String) {
     match &node.node {
         Block::Heading { level, body } => {
             buf.push('<');
             buf.push_str(level_to_heading(*level));
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
             buf.push('>');
 
             for node in body {
@@ -51,7 +101,12 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             }
         }
         Block::Section(nodes) => {
-            buf.push_str("<section>");
+            buf.push_str("<section");
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('>');
 
             for node in nodes {
                 htmlify_block(node, buf);
@@ -60,7 +115,12 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             buf.push_str("</section>");
         }
         Block::Div(nodes) => {
-            buf.push_str("<div>");
+            buf.push_str("<div");
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('>');
 
             for node in nodes {
                 htmlify_block(node, buf);
@@ -126,7 +186,13 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
             buf.push_str("</sub>");
         }
         Inline::Naked(nodes) => {
-            buf.push_str(r#"<span>"#);
+            buf.push_str("<span");
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('>');
+
             for node in nodes {
                 htmlify_inline(node, buf);
             }
@@ -138,12 +204,24 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
             }
         }
         Inline::Code(code) => {
-            buf.push_str("<code>");
+            buf.push_str("<code");
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('>');
+
             buf.push_str(code);
             buf.push_str("</code>");
         }
         Inline::Custom { body, .. } => {
-            buf.push_str(r#"<span>"#);
+            buf.push_str("<span");
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('>');
+
             for node in body {
                 htmlify_inline(node, buf);
             }
