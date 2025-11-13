@@ -1,16 +1,17 @@
-use crate::{ast::Document, lexer::tokenize, parser::parse};
+use crate::{ast::Document, error::KladdError, lexer::tokenize, parser::parse};
 
 pub mod ast;
 pub mod ast_visualizer;
 mod char_cursor;
+pub mod error;
 pub mod html;
 mod lexer;
 mod parser;
 mod token_cursor;
 
-pub fn parse_kladd(input: String) -> Document {
+pub fn parse_kladd(input: String) -> Result<Document, KladdError> {
     let tokens = tokenize(&input).collect::<Vec<_>>();
-    parse(tokens)
+    Ok(parse(tokens)?)
 }
 
 #[cfg(test)]
@@ -29,7 +30,7 @@ mod tests {
         assert!(!tokens.is_empty());
         insta::assert_debug_snapshot!("tokenizer", tokens);
 
-        let ast = parse(tokens);
+        let ast = parse(tokens).unwrap();
         insta::assert_debug_snapshot!("ast", ast);
 
         let vizualised = visualize(&ast);

@@ -21,13 +21,13 @@ impl Document {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AttributeValue {
     String(String),
     Boolean,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Attribute {
     pub name: String,
     pub value: AttributeValue,

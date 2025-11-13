@@ -3,11 +3,12 @@ use crate::{
         Attribute, AttributeValue, Block, BlockNode, Document, Inline, InlineKind, InlineNode,
         Inlines, Node, NodeBuilder,
     },
+    error::ParsingError,
     lexer::{Token, TokenKind},
     token_cursor::TokenCursor,
 };
 
-pub fn parse(input: Vec<Token>) -> Document {
+pub fn parse(input: Vec<Token>) -> Result<Document, ParsingError> {
     let mut cursor = TokenCursor::new(input);
 
     cursor.eat_while(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace));
@@ -24,35 +25,34 @@ pub fn parse(input: Vec<Token>) -> Document {
     let mut body = Vec::new();
     loop {
         match cursor.advance_token() {
-            ParseResult::Parsed(t) => body.push(t),
-            ParseResult::Skipped => continue,
-            ParseResult::Nothing => break,
-            ParseResult::Error(e) => panic!("{}", e),
+            Ok(Parsed::Some(t)) => body.push(t),
+            Ok(Parsed::Skipped) => continue,
+            Ok(Parsed::Nothing) => break,
+            Err(e) => return Err(e),
         }
     }
 
-    Document { metadata, body }
+    Ok(Document { metadata, body })
 }
 
+type ParseResult<T> = Result<Parsed<T>, ParsingError>;
+
 #[derive(Debug, Clone)]
-pub enum ParseResult<T> {
+pub enum Parsed<T> {
     /// Something was successfully parsed
-    Parsed(T),
+    Some(T),
     /// Whatever was parsed was skipped
     Skipped,
     /// The parser didn't parse anything
     Nothing,
-    /// Ruh-roh, things went boom
-    Error(String),
 }
 
-impl<T> ParseResult<T> {
+impl<T> Parsed<T> {
     pub fn unwrap(self) -> T {
         match self {
-            ParseResult::Parsed(t) => t,
-            ParseResult::Skipped => panic!("tried to unwrap on a Skipped"),
-            ParseResult::Nothing => panic!("tried to unwrap on a Nothing"),
-            ParseResult::Error(_) => panic!("tried to unwrap on a Error"),
+            Parsed::Some(t) => t,
+            Parsed::Skipped => panic!("tried to unwrap on a Skipped"),
+            Parsed::Nothing => panic!("tried to unwrap on a Nothing"),
         }
     }
 }
@@ -63,13 +63,13 @@ impl TokenCursor<'_> {
         match self.peek_kind() {
             Some(TokenKind::Eof) => {
                 self.advance();
-                ParseResult::Nothing
+                Ok(Parsed::Nothing)
             }
             Some(TokenKind::Dash) => {
                 parse_comment(self);
-                ParseResult::Skipped
+                Ok(Parsed::Skipped)
             }
-            None => ParseResult::Nothing,
+            None => Ok(Parsed::Nothing),
             Some(TokenKind::Bang) => parse_bang_node(self),
             Some(TokenKind::Hashbang) => barse_hash_block(self),
             _ => parse_block(self),
@@ -114,17 +114,18 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             | TokenKind::DoubleQuote
             | TokenKind::SingleQoute
             | TokenKind::Bang,
-        ) => ParseResult::Parsed(Node::new(
+        ) => Ok(Parsed::Some(Node::new(
             Inline::Text(cursor.advance().lexeme.to_string()),
             None,
-        )),
-        Some(TokenKind::OpenCurly) => ParseResult::Parsed(parse_simple_inline(cursor).unwrap()),
+        ))),
+        Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
         Some(TokenKind::At) => parse_inline(cursor),
         Some(TokenKind::Newline) => {
             cursor.advance();
-            ParseResult::Parsed(Node::new(Inline::Softbreak, None))
+            Ok(Parsed::Some(Node::new(Inline::Softbreak, None)))
         }
-        t => ParseResult::Error(format!("{:?} is not yet handled", t)),
+        Some(t) => Err(ParsingError::UnexpectedTokenKind(t, "inline")),
+        None => Err(ParsingError::UnexpectedEnd),
     }
 }
 
@@ -196,7 +197,7 @@ fn is_section_end(cursor: &mut TokenCursor, curr_section: &str) -> bool {
 
 fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     if cursor.peek_kind() != Some(TokenKind::Hashbang) {
-        return ParseResult::Nothing;
+        return Ok(Parsed::Nothing);
     }
 
     cursor.advance();
@@ -212,16 +213,16 @@ fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 
     while !is_section_end(cursor, section) && !cursor.is_at_end() {
         match try_parsers(vec![parse_paragraph, parse_heading], cursor) {
-            ParseResult::Parsed(p) => body.push(p),
-            ParseResult::Skipped => continue,
-            ParseResult::Nothing => continue,
-            ParseResult::Error(e) => panic!("{:?}", e),
+            Ok(Parsed::Some(p)) => body.push(p),
+            Ok(Parsed::Skipped) => continue,
+            Ok(Parsed::Nothing) => continue,
+            Err(e) => return Err(e),
         }
         skip_whitespace(cursor);
     }
 
     if !is_section_end(cursor, section) {
-        return ParseResult::Error("No section end found".into());
+        return Err(ParsingError::MissingBlockEnd("section"));
     }
 
     cursor.advance();
@@ -229,7 +230,7 @@ fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 
     builder.with_node(Block::Section(body));
 
-    ParseResult::Parsed(builder.build())
+    Ok(Parsed::Some(builder.build()))
 }
 
 pub fn parse_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
@@ -240,14 +241,14 @@ pub fn parse_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 
     while !is_heading(cursor) && !cursor.is_at_end() {
         match parse_paragraph(cursor) {
-            ParseResult::Parsed(p) => body.push(p),
+            Ok(Parsed::Some(p)) => body.push(p),
             _ => todo!(),
         }
         skip_whitespace(cursor);
     }
 
     builder.with_node(Block::Block(body));
-    ParseResult::Parsed(builder.build())
+    Ok(Parsed::Some(builder.build()))
 }
 
 fn is_double_newline(cursor: &mut TokenCursor) -> bool {
@@ -275,9 +276,9 @@ fn parse_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
         .collect();
 
     if text.is_empty() {
-        ParseResult::Skipped
+        Ok(Parsed::Skipped)
     } else {
-        ParseResult::Parsed(InlineNode::from_node(Inline::Text(text)))
+        Ok(Parsed::Some(InlineNode::from_node(Inline::Text(text))))
     }
 }
 
@@ -288,9 +289,9 @@ fn parse_newline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             lexeme: "\n",
         }) => {
             cursor.advance();
-            ParseResult::Parsed(InlineNode::from_node(Inline::Softbreak))
+            Ok(Parsed::Some(InlineNode::from_node(Inline::Softbreak)))
         }
-        _ => ParseResult::Nothing,
+        _ => Ok(Parsed::Nothing),
     }
 }
 
@@ -300,19 +301,19 @@ where
 {
     for parser in parsers {
         match parser(cursor) {
-            r @ ParseResult::Parsed(_) => return r,
-            ParseResult::Skipped => continue,
-            ParseResult::Nothing => continue,
-            e @ ParseResult::Error(_) => return e,
+            Ok(r @ Parsed::Some(_)) => return Ok(r),
+            Ok(Parsed::Skipped) => continue,
+            Ok(Parsed::Nothing) => continue,
+            Err(e) => return Err(e),
         }
     }
 
-    ParseResult::Nothing
+    Ok(Parsed::Nothing)
 }
 
 pub fn parse_paragraph(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     if is_heading(cursor) {
-        return ParseResult::Nothing;
+        return Ok(Parsed::Nothing);
     }
 
     let mut builder = NodeBuilder::new();
@@ -323,21 +324,21 @@ pub fn parse_paragraph(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
             vec![parse_text, parse_simple_inline, parse_inline, parse_newline],
             cursor,
         ) {
-            ParseResult::Parsed(p) => body.push(p),
-            ParseResult::Skipped => continue,
-            ParseResult::Nothing => continue,
-            ParseResult::Error(e) => return ParseResult::Error(e),
+            Ok(Parsed::Some(p)) => body.push(p),
+            Ok(Parsed::Skipped) => continue,
+            Ok(Parsed::Nothing) => continue,
+            Err(e) => return Err(e),
         }
     }
 
     builder.with_node(Block::Paragraph(body));
 
-    ParseResult::Parsed(builder.build())
+    Ok(Parsed::Some(builder.build()))
 }
 
 pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     if cursor.peek_kind() != Some(TokenKind::At) {
-        return ParseResult::Nothing;
+        return Ok(Parsed::Nothing);
     }
 
     cursor.advance();
@@ -364,7 +365,14 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             kind: TokenKind::OpenCurly | TokenKind::OpenBrace,
             ..
         }) => InlineKind::Naked,
-        e => panic!("{:?} cannot be a inline name", e),
+        Some(e) => {
+            return Err(ParsingError::UnexpectedToken(
+                e.kind,
+                e.lexeme.to_string(),
+                "inline",
+            ));
+        }
+        None => return Err(ParsingError::UnexpectedEnd),
     };
 
     if kind != InlineKind::Naked {
@@ -385,14 +393,14 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
         }
         InlineKind::Link => {
             if !builder.has_attributes() || !builder.has_attribute_by_name("href") {
-                panic!("a @link must always have a 'href' attribute");
+                return Err(ParsingError::InvalidAttribute("href", "link"));
             }
 
-            let body = parse_inline_body(cursor);
+            let body = parse_inline_body(cursor)?.unwrap();
             builder.with_node(Inline::from_kind(kind, body));
         }
         _ => {
-            let body = parse_inline_body(cursor);
+            let body = parse_inline_body(cursor)?.unwrap();
             builder.with_node(Inline::from_kind(kind, body));
         }
     }
@@ -400,20 +408,21 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
     cursor.advance();
 
-    ParseResult::Parsed(builder.build())
+    Ok(Parsed::Some(builder.build()))
 }
 
-fn parse_inline_body(cursor: &mut TokenCursor) -> Inlines {
+fn parse_inline_body(cursor: &mut TokenCursor) -> ParseResult<Inlines> {
     let mut body = Vec::new();
     while cursor.peek_kind() != Some(TokenKind::CloseBrace) && !cursor.is_at_end() {
         match parse_inlines(cursor) {
-            ParseResult::Parsed(p) => body.push(p),
-            ParseResult::Skipped => todo!(),
-            ParseResult::Nothing => todo!(),
-            ParseResult::Error(e) => panic!("{:?}", e),
+            Ok(Parsed::Some(p)) => body.push(p),
+            Ok(Parsed::Skipped) => todo!(),
+            Ok(Parsed::Nothing) => todo!(),
+            Err(e) => return Err(e),
         }
     }
-    body
+
+    Ok(Parsed::Some(body))
 }
 
 fn parse_code_inline(cursor: &mut TokenCursor) -> String {
@@ -459,7 +468,7 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
     if cursor.peek_kind() != Some(TokenKind::OpenCurly)
         && !is_valid_simple_inline(cursor.peek_nth_kind(1))
     {
-        return ParseResult::Nothing;
+        return Ok(Parsed::Nothing);
     }
 
     cursor.advance();
@@ -472,7 +481,8 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
         Some(t @ TokenKind::Underscore) => (t, InlineKind::Underline),
         Some(t @ TokenKind::Equals) => (t, InlineKind::Highlight),
         Some(t @ TokenKind::Tilde) => (t, InlineKind::Strikethrough),
-        _ => panic!("invalid short inline"),
+        Some(t) => return Err(ParsingError::UnexpectedTokenKind(t, "simple inlines")),
+        _ => return Err(ParsingError::UnexpectedEnd),
     };
 
     cursor.advance();
@@ -480,10 +490,10 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
     let mut body = Vec::new();
     while cursor.peek_kind() != Some(t) && !cursor.is_at_end() {
         match parse_inlines(cursor) {
-            ParseResult::Parsed(p) => body.push(p),
-            ParseResult::Skipped => todo!(),
-            ParseResult::Nothing => todo!(),
-            ParseResult::Error(_) => todo!(),
+            Ok(Parsed::Some(p)) => body.push(p),
+            Ok(Parsed::Skipped) => todo!(),
+            Ok(Parsed::Nothing) => todo!(),
+            Err(e) => return Err(e),
         }
     }
 
@@ -494,7 +504,7 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseCurly));
     cursor.advance();
 
-    ParseResult::Parsed(node_builder.build())
+    Ok(Parsed::Some(node_builder.build()))
 }
 
 fn parse_attributes(cursor: &mut TokenCursor) -> Vec<Attribute> {
@@ -575,9 +585,15 @@ fn parse_heading(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
             "h4" => 4,
             "h5" => 5,
             "h6" => 6,
-            e => panic!("{} is not a valid heading level", e),
+            e => return Err(ParsingError::InvalidHeading(e.to_string())),
         },
-        t => panic!("{:?} not a valid heading name", t),
+        t => {
+            return Err(ParsingError::UnexpectedToken(
+                t.kind,
+                t.lexeme.to_string(),
+                "parse_heading",
+            ));
+        }
     };
 
     if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
@@ -590,10 +606,10 @@ fn parse_heading(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     let mut body = Vec::new();
     while cursor.peek_kind() != Some(TokenKind::CloseBrace) && !cursor.is_at_end() {
         match parse_inlines(cursor) {
-            ParseResult::Parsed(p) => body.push(p),
-            ParseResult::Skipped => todo!(),
-            ParseResult::Nothing => todo!(),
-            ParseResult::Error(_) => todo!(),
+            Ok(Parsed::Some(p)) => body.push(p),
+            Ok(Parsed::Skipped) => todo!(),
+            Ok(Parsed::Nothing) => todo!(),
+            Err(e) => return Err(e),
         }
     }
 
@@ -602,7 +618,7 @@ fn parse_heading(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 
     builder.with_node(Block::Heading { level, body });
 
-    ParseResult::Parsed(builder.build())
+    Ok(Parsed::Some(builder.build()))
 }
 
 #[cfg(test)]
@@ -618,7 +634,7 @@ mod tests {
     fn test_single_inline() {
         let lexer = tokenize("@bold[body]").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
-        let res = parse_inline(&mut cursor).unwrap();
+        let res = parse_inline(&mut cursor).unwrap().unwrap();
 
         assert!(cursor.is_at_end());
         assert_eq!(
@@ -664,7 +680,7 @@ mod tests {
         for (attr, expected) in inputs {
             let lexer = tokenize(attr).collect::<Vec<_>>();
             let mut cursor = TokenCursor::new(lexer);
-            let res = parse_inline(&mut cursor).unwrap();
+            let res = parse_inline(&mut cursor).unwrap().unwrap();
 
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);
@@ -675,7 +691,7 @@ mod tests {
     fn test_parse_single_simple_inline() {
         let lexer = tokenize("{*bold *}").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
-        let res = parse_simple_inline(&mut cursor).unwrap();
+        let res = parse_simple_inline(&mut cursor).unwrap().unwrap();
 
         assert!(cursor.is_at_end());
         assert_eq!(
@@ -694,7 +710,7 @@ mod tests {
     fn test_parse_nested_simple_inlines() {
         let lexer = tokenize("{*bold {/italic {~struck~}/} {=highlit=}*}").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
-        let res = parse_simple_inline(&mut cursor).unwrap();
+        let res = parse_simple_inline(&mut cursor).unwrap().unwrap();
 
         assert!(cursor.is_at_end());
         assert_eq!(
@@ -748,7 +764,7 @@ mod tests {
         for (attr, expected) in inputs {
             let lexer = tokenize(attr).collect::<Vec<_>>();
             let mut cursor = TokenCursor::new(lexer);
-            let res = parse_heading(&mut cursor).unwrap();
+            let res = parse_heading(&mut cursor).unwrap().unwrap();
 
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);
@@ -777,7 +793,7 @@ mod tests {
         for (attr, expected) in inputs {
             let lexer = tokenize(attr).collect::<Vec<_>>();
             let mut cursor = TokenCursor::new(lexer);
-            let res = parse_inline(&mut cursor).unwrap();
+            let res = parse_inline(&mut cursor).unwrap().unwrap();
 
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);
@@ -814,7 +830,7 @@ mod tests {
         for (attr, expected) in inputs {
             let lexer = tokenize(attr).collect::<Vec<_>>();
             let mut cursor = TokenCursor::new(lexer);
-            let res = parse_inline(&mut cursor).unwrap();
+            let res = parse_inline(&mut cursor).unwrap().unwrap();
 
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);
@@ -822,12 +838,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_parse_link_without_href() {
         let input = "@link[without href]";
         let lexer = tokenize(input).collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
-        let _ = parse_inline(&mut cursor).unwrap();
+        assert!(parse_inline(&mut cursor).is_err());
     }
 
     #[test]
