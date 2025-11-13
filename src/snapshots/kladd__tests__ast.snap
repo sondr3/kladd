@@ -70,9 +70,37 @@ Document {
                                 },
                                 Node {
                                     node: Text(
-                                        " ",
+                                        " and ",
                                     ),
                                     attributes: None,
+                                },
+                                Node {
+                                    node: Link(
+                                        [
+                                            Node {
+                                                node: Text(
+                                                    "eons",
+                                                ),
+                                                attributes: None,
+                                            },
+                                            Node {
+                                                node: Text(
+                                                    ".io",
+                                                ),
+                                                attributes: None,
+                                            },
+                                        ],
+                                    ),
+                                    attributes: Some(
+                                        [
+                                            Attribute {
+                                                name: "href",
+                                                value: String(
+                                                    "https://www.eons.io",
+                                                ),
+                                            },
+                                        ],
+                                    ),
                                 },
                                 Node {
                                     node: Softbreak,

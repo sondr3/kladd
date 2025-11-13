@@ -204,6 +204,78 @@ expression: tokens
         lexeme: " ",
     },
     Token {
+        kind: Text,
+        lexeme: "and ",
+    },
+    Token {
+        kind: At,
+        lexeme: "@",
+    },
+    Token {
+        kind: Text,
+        lexeme: "link",
+    },
+    Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Text,
+        lexeme: "href",
+    },
+    Token {
+        kind: Equals,
+        lexeme: "=",
+    },
+    Token {
+        kind: Text,
+        lexeme: "https",
+    },
+    Token {
+        kind: Text,
+        lexeme: ":",
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+    },
+    Token {
+        kind: Text,
+        lexeme: "www",
+    },
+    Token {
+        kind: Text,
+        lexeme: ".eons",
+    },
+    Token {
+        kind: Text,
+        lexeme: ".io",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
+    },
+    Token {
+        kind: OpenBrace,
+        lexeme: "[",
+    },
+    Token {
+        kind: Text,
+        lexeme: "eons",
+    },
+    Token {
+        kind: Text,
+        lexeme: ".io",
+    },
+    Token {
+        kind: CloseBrace,
+        lexeme: "]",
+    },
+    Token {
         kind: Newline,
         lexeme: "\n",
     },

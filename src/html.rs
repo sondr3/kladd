@@ -39,6 +39,7 @@ static DEFAULT_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     set.insert("id");
     set.insert("style");
     set.insert("title");
+    set.insert("href");
     set
 });
 
@@ -211,6 +212,19 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
 
             buf.push_str(code);
             buf.push_str("</code>");
+        }
+        Inline::Link(nodes) => {
+            buf.push_str("<a");
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('>');
+
+            for node in nodes {
+                htmlify_inline(node, buf);
+            }
+            buf.push_str("</a>");
         }
         Inline::Custom { body, .. } => {
             buf.push_str("<span");

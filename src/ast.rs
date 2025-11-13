@@ -90,6 +90,16 @@ impl<T> NodeBuilder<T> {
         self
     }
 
+    pub fn has_attributes(&self) -> bool {
+        self.attributes.is_some()
+    }
+
+    pub fn has_attribute_by_name(&self, needle: &str) -> bool {
+        self.attributes
+            .as_ref()
+            .is_some_and(|a| a.iter().any(|i| i.name == needle))
+    }
+
     pub fn build(self) -> Node<T> {
         assert!(self.node.is_some());
         Node {
@@ -128,6 +138,7 @@ pub enum InlineKind {
     Subscript,
     Naked,
     Code,
+    Link,
     Custom(String),
 }
 
@@ -147,6 +158,7 @@ pub enum Inline {
     Naked(Inlines),
     Quoted(Quote, Inlines),
     Code(String),
+    Link(Inlines),
     Custom { name: String, body: Inlines },
     Softbreak,
     Hardbreak,
@@ -164,6 +176,7 @@ impl Inline {
             InlineKind::Subscript => Inline::Subscript(body),
             InlineKind::Naked => Inline::Naked(body),
             InlineKind::Custom(ident) => Inline::Custom { name: ident, body },
+            InlineKind::Link => Inline::Link(body),
             InlineKind::Code => panic!("cannot construct a @code from this method"),
         }
     }

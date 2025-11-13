@@ -3,17 +3,20 @@ source: src/lib.rs
 expression: vizualised
 ---
 doc
-  section class=important, 
-    heading level=1 some=value, other=value2, 
+  section class=important,
+    heading level=1 some=value, other=value2,
       str text = "Header"
-    p 
+    p
       strong
         str text = "bold "
         emph
           str text = "italic"
-      str text = " "
+      str text = " and "
+      link href=https://www.eons.io,
+        str text = "eons"
+        str text = ".io"
       softbreak
-    p 
+    p
       str text = "With some "
       strong
         str text = "body"

@@ -357,6 +357,7 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             "superscript" | "sup" => InlineKind::Superscript,
             "subscript" | "sub" => InlineKind::Subscript,
             "code" => InlineKind::Code,
+            "link" | "a" => InlineKind::Link,
             ident => InlineKind::Custom(ident.to_string()),
         },
         Some(Token {
@@ -377,12 +378,23 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
     cursor.advance();
 
-    if kind == InlineKind::Code {
-        let body = parse_code_inline(cursor);
-        builder.with_node(Inline::Code(body));
-    } else {
-        let body = parse_inline_body(cursor);
-        builder.with_node(Inline::from_kind(kind, body));
+    match kind {
+        InlineKind::Code => {
+            let body = parse_code_inline(cursor);
+            builder.with_node(Inline::Code(body));
+        }
+        InlineKind::Link => {
+            if !builder.has_attributes() || !builder.has_attribute_by_name("href") {
+                panic!("a @link must always have a 'href' attribute");
+            }
+
+            let body = parse_inline_body(cursor);
+            builder.with_node(Inline::from_kind(kind, body));
+        }
+        _ => {
+            let body = parse_inline_body(cursor);
+            builder.with_node(Inline::from_kind(kind, body));
+        }
     }
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseBrace));
@@ -770,6 +782,52 @@ mod tests {
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);
         }
+    }
+
+    #[test]
+    fn test_parse_links() {
+        let inputs = vec![
+            (
+                "@link{href=https://github.com/sondr3}[my GitHub]",
+                InlineNode::new(
+                    Inline::Link(map_inlines([Inline::Text("my GitHub".to_owned())])),
+                    Some(vec![Attribute::new(
+                        "href".to_owned(),
+                        AttributeValue::String("https://github.com/sondr3".to_owned()),
+                    )]),
+                ),
+            ),
+            (
+                "@link{href=/relative/url/}[{/URL/}]",
+                InlineNode::new(
+                    Inline::Link(map_inlines([Inline::Italic(map_inlines([Inline::Text(
+                        "URL".to_owned(),
+                    )]))])),
+                    Some(vec![Attribute::new(
+                        "href".to_owned(),
+                        AttributeValue::String("/relative/url/".to_owned()),
+                    )]),
+                ),
+            ),
+        ];
+
+        for (attr, expected) in inputs {
+            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let mut cursor = TokenCursor::new(lexer);
+            let res = parse_inline(&mut cursor).unwrap();
+
+            assert!(cursor.is_at_end());
+            assert_eq!(res, expected);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_link_without_href() {
+        let input = "@link[without href]";
+        let lexer = tokenize(input).collect::<Vec<_>>();
+        let mut cursor = TokenCursor::new(lexer);
+        let _ = parse_inline(&mut cursor).unwrap();
     }
 
     #[test]

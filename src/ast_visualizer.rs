@@ -214,6 +214,18 @@ fn visualize_inline(node: &InlineNode, buf: &mut String, indent: usize) {
             buf.push('\n');
             buf.push_str(code);
         }
+        Inline::Link(nodes) => {
+            buf.push_str(&" ".repeat(indent));
+            buf.push_str("link");
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('\n');
+
+            for node in nodes {
+                visualize_inline(node, buf, indent + 2);
+            }
+        }
         Inline::Custom { body, name } => {
             buf.push_str(&" ".repeat(indent));
             buf.push('@');
