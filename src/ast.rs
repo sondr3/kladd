@@ -27,6 +27,18 @@ pub enum AttributeValue {
     Boolean,
 }
 
+impl AttributeValue {
+    pub fn concat(&self, other: Self) -> Self {
+        match (self, other) {
+            (AttributeValue::String(a), AttributeValue::String(b)) => {
+                AttributeValue::String(format!("{a} {b}"))
+            }
+            (AttributeValue::Boolean, AttributeValue::Boolean) => AttributeValue::Boolean,
+            _ => panic!("Attempt at concating two different attribute values"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AttributeKind {
     /// A `.class` attribute

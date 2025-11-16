@@ -134,6 +134,38 @@ Document {
             ),
         },
         Node {
+            node: Named {
+                name: "warn",
+                body: [
+                    Node {
+                        node: Paragraph(
+                            [
+                                Node {
+                                    node: Italic(
+                                        [
+                                            Node {
+                                                node: Text(
+                                                    "Warning",
+                                                ),
+                                                attributes: None,
+                                            },
+                                        ],
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Softbreak,
+                                    attributes: None,
+                                },
+                            ],
+                        ),
+                        attributes: None,
+                    },
+                ],
+            },
+            attributes: None,
+        },
+        Node {
             node: Block(
                 [
                     Node {

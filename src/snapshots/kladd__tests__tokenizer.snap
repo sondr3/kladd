@@ -304,6 +304,54 @@ expression: tokens
         lexeme: "\n\n",
     },
     Token {
+        kind: ForwardSlash,
+        lexeme: "/",
+    },
+    Token {
+        kind: Text,
+        lexeme: "warn",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
+        kind: At,
+        lexeme: "@",
+    },
+    Token {
+        kind: Text,
+        lexeme: "italic",
+    },
+    Token {
+        kind: OpenBrace,
+        lexeme: "[",
+    },
+    Token {
+        kind: Text,
+        lexeme: "Warning",
+    },
+    Token {
+        kind: CloseBrace,
+        lexeme: "]",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
+        kind: BackwardSlash,
+        lexeme: "\\",
+    },
+    Token {
+        kind: Text,
+        lexeme: "warn",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n\n",
+    },
+    Token {
         kind: Text,
         lexeme: "With some ",
     },

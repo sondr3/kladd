@@ -1,7 +1,8 @@
 use htmlize::{escape_attribute, escape_text};
 
 use crate::ast::{
-    Attribute, AttributeValue, Attributes, Block, BlockNode, Document, Inline, InlineNode,
+    Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Document, Inline,
+    InlineNode,
 };
 
 pub fn to_html(Document { body, .. }: &Document) -> String {
@@ -64,6 +65,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             buf.push_str("</");
             buf.push_str(level_to_heading(*level));
             buf.push('>');
+            buf.push('\n');
         }
         Block::Paragraph(nodes) => {
             buf.push_str("<p>");
@@ -86,26 +88,53 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
                 write_attributes(attrs, buf);
             }
             buf.push('>');
+            buf.push('\n');
 
             for node in nodes {
                 htmlify_block(node, buf);
             }
 
             buf.push_str("</section>");
+            buf.push('\n');
         }
         Block::Named { name, body } => {
             buf.push_str("<div");
 
+            let mut class_seen = false;
             if let Some(attrs) = &node.attributes {
-                write_attributes(attrs, buf);
+                for attr in attrs {
+                    if attr.kind == AttributeKind::Class {
+                        class_seen = true;
+                        let attr = dbg!(Attribute::new(
+                            AttributeKind::Class,
+                            attr.value.concat(AttributeValue::String(name.to_owned())),
+                        ));
+                        write_attribute(&attr, buf);
+                    }
+
+                    write_attribute(attr, buf);
+                }
             }
+
+            if !class_seen {
+                write_attribute(
+                    &Attribute::new(
+                        AttributeKind::Class,
+                        AttributeValue::String(name.to_owned()),
+                    ),
+                    buf,
+                );
+            }
+
             buf.push('>');
+            buf.push('\n');
 
             for node in body {
                 htmlify_block(node, buf);
             }
 
             buf.push_str("</div>");
+            buf.push('\n');
         }
     }
 }

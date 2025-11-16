@@ -12,5 +12,9 @@ metadata = things
 {*bold {/italic/}*} and @link{href=https://www.eons.io}[eons.io]
 \section
 
+/warn
+@italic[Warning]
+\warn
+
 With some @bold[body] and {/italic/} content, and a "quoted" 'text', and <escaped>.
  "#;

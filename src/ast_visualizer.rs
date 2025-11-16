@@ -76,6 +76,7 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
         Block::Named { name, body } => {
             buf.push_str(&" ".repeat(indent));
             buf.push_str(name);
+
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }

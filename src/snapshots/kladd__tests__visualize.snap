@@ -17,6 +17,11 @@ doc
         str text = "."
         str text = "io"
       softbreak
+  warn
+    p
+      emph
+        str text = "Warning"
+      softbreak
   p
     str text = "With some "
     strong
