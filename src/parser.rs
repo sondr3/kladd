@@ -491,14 +491,19 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
 }
 
 fn parse_attributes(cursor: &mut TokenCursor) -> Result<Attributes, ParsingError> {
-    let mut res = Vec::new();
+    let mut res: Attributes = Vec::new();
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
     cursor.advance();
 
     loop {
         skip_whitespace(cursor);
-        res.push(parse_attribute(cursor)?);
+        let attr = parse_attribute(cursor)?;
+        if res.iter().any(|a| a.kind == attr.kind) {
+            return Err(ParsingError::DuplicateAttribute(attr.kind));
+        } else {
+            res.push(attr);
+        }
 
         if matches!(cursor.peek_kind(), Some(TokenKind::Comma)) {
             cursor.advance();
@@ -937,6 +942,16 @@ mod tests {
                     AttributeValue::String("value2 and more".to_string())
                 ),
             ]
+        );
+    }
+
+    #[test]
+    fn test_parse_duplicate_attributes() {
+        let lexer = tokenize(r#"{.some-class, class=duplicate}"#).collect::<Vec<_>>();
+        let mut cursor = TokenCursor::new(lexer);
+        assert_eq!(
+            parse_attributes(&mut cursor),
+            Err(ParsingError::DuplicateAttribute(AttributeKind::Class))
         );
     }
 }
