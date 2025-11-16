@@ -64,8 +64,8 @@ expression: tokens
         lexeme: "\n\n",
     },
     Token {
-        kind: Hashbang,
-        lexeme: "#",
+        kind: ForwardSlash,
+        lexeme: "/",
     },
     Token {
         kind: Text,
@@ -176,7 +176,7 @@ expression: tokens
         lexeme: "{",
     },
     Token {
-        kind: Slash,
+        kind: ForwardSlash,
         lexeme: "/",
     },
     Token {
@@ -184,7 +184,7 @@ expression: tokens
         lexeme: "italic",
     },
     Token {
-        kind: Slash,
+        kind: ForwardSlash,
         lexeme: "/",
     },
     Token {
@@ -236,11 +236,11 @@ expression: tokens
         lexeme: ":",
     },
     Token {
-        kind: Slash,
+        kind: ForwardSlash,
         lexeme: "/",
     },
     Token {
-        kind: Slash,
+        kind: ForwardSlash,
         lexeme: "/",
     },
     Token {
@@ -292,8 +292,8 @@ expression: tokens
         lexeme: "\n",
     },
     Token {
-        kind: Hashbang,
-        lexeme: "#",
+        kind: BackwardSlash,
+        lexeme: "\\",
     },
     Token {
         kind: Text,
@@ -340,7 +340,7 @@ expression: tokens
         lexeme: "{",
     },
     Token {
-        kind: Slash,
+        kind: ForwardSlash,
         lexeme: "/",
     },
     Token {
@@ -348,7 +348,7 @@ expression: tokens
         lexeme: "italic",
     },
     Token {
-        kind: Slash,
+        kind: ForwardSlash,
         lexeme: "/",
     },
     Token {

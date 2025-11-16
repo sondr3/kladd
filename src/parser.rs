@@ -71,7 +71,7 @@ impl TokenCursor<'_> {
             }
             None => Ok(Parsed::Nothing),
             Some(TokenKind::Bang) => parse_bang_node(self),
-            Some(TokenKind::Hashbang) => barse_hash_block(self),
+            Some(TokenKind::ForwardSlash) => parse_named_block(self),
             _ => parse_block(self),
         }
     }
@@ -138,7 +138,7 @@ pub fn parse_bang_node(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     }
 }
 
-pub fn barse_hash_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
+pub fn parse_named_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     if is_section(cursor) {
         parse_section(cursor)
     } else {
@@ -149,7 +149,7 @@ pub fn barse_hash_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 fn is_section(cursor: &TokenCursor) -> bool {
     matches!((cursor.peek(), cursor.peek_nth(1)), (
             Some(Token {
-                kind: TokenKind::Hashbang,
+                kind: TokenKind::ForwardSlash,
                 ..
             }),
             Some(Token {
@@ -164,7 +164,7 @@ fn is_block_end(cursor: &mut TokenCursor) -> bool {
         (cursor.peek(), cursor.peek_nth(1), cursor.peek_nth(2)),
         (
             Some(Token {
-                kind: TokenKind::Hashbang,
+                kind: TokenKind::BackwardSlash,
                 ..
             }),
             Some(Token {
@@ -182,7 +182,7 @@ fn is_block_end(cursor: &mut TokenCursor) -> bool {
 fn is_section_end(cursor: &mut TokenCursor, curr_section: &str) -> bool {
     matches!((cursor.peek(), cursor.peek_nth(1), cursor.peek_nth(2)), (
             Some(Token {
-                kind: TokenKind::Hashbang,
+                kind: TokenKind::BackwardSlash,
                 ..
             }),
             Some(Token {
@@ -197,7 +197,7 @@ fn is_section_end(cursor: &mut TokenCursor, curr_section: &str) -> bool {
 }
 
 fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
-    if cursor.peek_kind() != Some(TokenKind::Hashbang) {
+    if cursor.peek_kind() != Some(TokenKind::ForwardSlash) {
         return Ok(Parsed::Nothing);
     }
 
@@ -456,7 +456,7 @@ fn is_valid_simple_inline(kind: Option<TokenKind>) -> bool {
     matches!(
         kind,
         Some(
-            TokenKind::Slash
+            TokenKind::ForwardSlash
                 | TokenKind::Star
                 | TokenKind::Underscore
                 | TokenKind::Equals
@@ -477,7 +477,7 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
     let mut node_builder = NodeBuilder::new();
 
     let (t, kind) = match cursor.peek_kind() {
-        Some(t @ TokenKind::Slash) => (t, InlineKind::Italic),
+        Some(t @ TokenKind::ForwardSlash) => (t, InlineKind::Italic),
         Some(t @ TokenKind::Star) => (t, InlineKind::Strong),
         Some(t @ TokenKind::Underscore) => (t, InlineKind::Underline),
         Some(t @ TokenKind::Equals) => (t, InlineKind::Highlight),

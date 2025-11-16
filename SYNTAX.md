@@ -52,15 +52,15 @@ add arbitrary @{class=red}[classes] to text.
 ## Block elements
 
 ```
-#code{language=rust}
+/code{language=rust}
 fn main() {
   println!("Hello, world!");
 }
-#code
+\code
 
-#section{attr=but}
+/section{attr=but}
 !h2[Title]
-#section
+\section
 ```
 
 ## Comments 
