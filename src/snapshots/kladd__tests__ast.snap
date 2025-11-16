@@ -25,13 +25,17 @@ Document {
                         attributes: Some(
                             [
                                 Attribute {
-                                    name: "some",
+                                    kind: Attr(
+                                        "some",
+                                    ),
                                     value: String(
                                         "value",
                                     ),
                                 },
                                 Attribute {
-                                    name: "other",
+                                    kind: Attr(
+                                        "other",
+                                    ),
                                     value: String(
                                         "value2",
                                     ),
@@ -85,7 +89,13 @@ Document {
                                             },
                                             Node {
                                                 node: Text(
-                                                    ".io",
+                                                    ".",
+                                                ),
+                                                attributes: None,
+                                            },
+                                            Node {
+                                                node: Text(
+                                                    "io",
                                                 ),
                                                 attributes: None,
                                             },
@@ -94,7 +104,7 @@ Document {
                                     attributes: Some(
                                         [
                                             Attribute {
-                                                name: "href",
+                                                kind: Href,
                                                 value: String(
                                                     "https://www.eons.io",
                                                 ),
@@ -115,7 +125,7 @@ Document {
             attributes: Some(
                 [
                     Attribute {
-                        name: "class",
+                        kind: Class,
                         value: String(
                             "important",
                         ),

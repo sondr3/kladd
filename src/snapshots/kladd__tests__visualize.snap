@@ -14,7 +14,8 @@ doc
       str text = " and "
       link href=https://www.eons.io,
         str text = "eons"
-        str text = ".io"
+        str text = "."
+        str text = "io"
       softbreak
     p
       str text = "With some "

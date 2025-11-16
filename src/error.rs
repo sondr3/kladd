@@ -8,7 +8,8 @@ pub enum ParsingError {
     UnexpectedEnd,
     UnexpectedTokenKind(TokenKind, &'static str),
     UnexpectedToken(TokenKind, String, &'static str),
-    InvalidAttribute(&'static str, &'static str),
+    InvalidAttribute(TokenKind),
+    InvalidAttributeKind(TokenKind),
     MissingAttribute(&'static str, &'static str),
     InvalidHeading(String),
     MissingBlockEnd(&'static str),
@@ -25,8 +26,11 @@ impl Display for ParsingError {
                     token, name, desc
                 )
             }
-            ParsingError::InvalidAttribute(attr, desc) => {
-                write!(f, "invalid attribute {} in {}", attr, desc)
+            ParsingError::InvalidAttribute(kind) => {
+                write!(f, "{:?} is not a valid attribute", kind)
+            }
+            ParsingError::InvalidAttributeKind(kind) => {
+                write!(f, "{:?} is not valid as an attribute key", kind)
             }
             ParsingError::MissingAttribute(attr, name) => {
                 write!(f, "attribute {} required in {}", attr, name)

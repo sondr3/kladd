@@ -248,12 +248,20 @@ expression: tokens
         lexeme: "www",
     },
     Token {
-        kind: Text,
-        lexeme: ".eons",
+        kind: Dot,
+        lexeme: ".",
     },
     Token {
         kind: Text,
-        lexeme: ".io",
+        lexeme: "eons",
+    },
+    Token {
+        kind: Dot,
+        lexeme: ".",
+    },
+    Token {
+        kind: Text,
+        lexeme: "io",
     },
     Token {
         kind: CloseCurly,
@@ -268,8 +276,12 @@ expression: tokens
         lexeme: "eons",
     },
     Token {
+        kind: Dot,
+        lexeme: ".",
+    },
+    Token {
         kind: Text,
-        lexeme: ".io",
+        lexeme: "io",
     },
     Token {
         kind: CloseBrace,
@@ -412,7 +424,7 @@ expression: tokens
         lexeme: ">",
     },
     Token {
-        kind: Text,
+        kind: Dot,
         lexeme: ".",
     },
     Token {

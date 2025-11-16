@@ -1,5 +1,3 @@
-use std::{collections::HashSet, sync::LazyLock};
-
 use htmlize::{escape_attribute, escape_text};
 
 use crate::ast::{
@@ -27,28 +25,9 @@ fn level_to_heading(level: u8) -> &'static str {
     }
 }
 
-static DEFAULT_ATTRIBUTES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
-    let mut set = HashSet::new();
-    set.insert("alt");
-    set.insert("background");
-    set.insert("checked");
-    set.insert("class");
-    set.insert("dir");
-    set.insert("disabled");
-    set.insert("hidden");
-    set.insert("id");
-    set.insert("style");
-    set.insert("title");
-    set.insert("href");
-    set
-});
-
-fn write_attribute(attr: &Attribute, buf: &mut String, is_default: bool) {
+fn write_attribute(attr: &Attribute, buf: &mut String) {
     buf.push(' ');
-    if !is_default {
-        buf.push_str("data-");
-    }
-    buf.push_str(&attr.name);
+    attr.kind.write_html(buf);
 
     match &attr.value {
         AttributeValue::String(v) => {
@@ -63,8 +42,7 @@ fn write_attribute(attr: &Attribute, buf: &mut String, is_default: bool) {
 
 fn write_attributes(attrs: &Attributes, buf: &mut String) {
     for attr in attrs {
-        let is_default = DEFAULT_ATTRIBUTES.contains(&attr.name.as_ref());
-        write_attribute(attr, buf, is_default);
+        write_attribute(attr, buf);
     }
 }
 

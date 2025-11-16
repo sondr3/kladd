@@ -16,7 +16,7 @@ fn write_attributes(attrs: &Attributes, buf: &mut String) {
     let len = attrs.len();
     for (i, attr) in attrs.iter().enumerate() {
         buf.push(' ');
-        buf.push_str(&attr.name);
+        attr.kind.write_ast(buf);
         buf.push('=');
         match &attr.value {
             AttributeValue::String(v) => buf.push_str(v),

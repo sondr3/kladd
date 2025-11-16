@@ -28,14 +28,61 @@ pub enum AttributeValue {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+pub enum AttributeKind {
+    Class,
+    Id,
+    Href,
+    Attr(String),
+}
+
+impl AttributeKind {
+    pub fn write_html(&self, buf: &mut String) {
+        match self {
+            AttributeKind::Class => buf.push_str("class"),
+            AttributeKind::Id => buf.push_str("id"),
+            AttributeKind::Href => buf.push_str("href"),
+            AttributeKind::Attr(v) => match v.as_str() {
+                "alt" | "background" | "checked" | "dir" | "disabled" | "hidden" | "style"
+                | "title" => buf.push_str(v),
+                _ => {
+                    buf.push_str("data-");
+                    buf.push_str(v);
+                }
+            },
+        }
+    }
+
+    pub fn write_ast(&self, buf: &mut String) {
+        match self {
+            AttributeKind::Class => buf.push_str("class"),
+            AttributeKind::Id => buf.push_str("id"),
+            AttributeKind::Href => buf.push_str("href"),
+            AttributeKind::Attr(v) => buf.push_str(v),
+        }
+    }
+}
+
+#[cfg(any(debug_assertions, test))]
+impl From<&str> for AttributeKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "href" => AttributeKind::Href,
+            "class" | "." => AttributeKind::Class,
+            "id" | "#" => AttributeKind::Id,
+            _ => AttributeKind::Attr(value.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Attribute {
-    pub name: String,
+    pub kind: AttributeKind,
     pub value: AttributeValue,
 }
 
 impl Attribute {
-    pub fn new(name: String, value: AttributeValue) -> Self {
-        Attribute { name, value }
+    pub fn new(kind: AttributeKind, value: AttributeValue) -> Self {
+        Attribute { kind, value }
     }
 }
 
@@ -94,10 +141,10 @@ impl<T> NodeBuilder<T> {
         self.attributes.is_some()
     }
 
-    pub fn has_attribute_by_name(&self, needle: &str) -> bool {
+    pub fn has_attribute_by_kind(&self, needle: AttributeKind) -> bool {
         self.attributes
             .as_ref()
-            .is_some_and(|a| a.iter().any(|i| i.name == needle))
+            .is_some_and(|a| a.iter().any(|i| i.kind == needle))
     }
 
     pub fn build(self) -> Node<T> {

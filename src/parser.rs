@@ -1,7 +1,7 @@
 use crate::{
     ast::{
-        Attribute, AttributeValue, Block, BlockNode, Document, Inline, InlineKind, InlineNode,
-        Inlines, Node, NodeBuilder,
+        Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Document, Inline,
+        InlineKind, InlineNode, Inlines, Node, NodeBuilder,
     },
     error::ParsingError,
     lexer::{Token, TokenKind},
@@ -113,7 +113,8 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             | TokenKind::Whitespace
             | TokenKind::DoubleQuote
             | TokenKind::SingleQoute
-            | TokenKind::Bang,
+            | TokenKind::Bang
+            | TokenKind::Dot,
         ) => Ok(Parsed::Some(Node::new(
             Inline::Text(cursor.advance().lexeme.to_string()),
             None,
@@ -205,7 +206,7 @@ fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 
     let mut builder = NodeBuilder::new();
     if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
-        builder.with_attributes(parse_attributes(cursor));
+        builder.with_attributes(parse_attributes(cursor)?);
     }
 
     skip_whitespace(cursor);
@@ -380,7 +381,7 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     }
 
     if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
-        builder.with_attributes(parse_attributes(cursor));
+        builder.with_attributes(parse_attributes(cursor)?);
     }
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
@@ -392,8 +393,8 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             builder.with_node(Inline::Code(body));
         }
         InlineKind::Link => {
-            if !builder.has_attributes() || !builder.has_attribute_by_name("href") {
-                return Err(ParsingError::InvalidAttribute("href", "link"));
+            if !builder.has_attributes() || !builder.has_attribute_by_kind(AttributeKind::Href) {
+                return Err(ParsingError::MissingAttribute("href", "link"));
             }
 
             let body = parse_inline_body(cursor)?.unwrap();
@@ -507,14 +508,14 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
     Ok(Parsed::Some(node_builder.build()))
 }
 
-fn parse_attributes(cursor: &mut TokenCursor) -> Vec<Attribute> {
+fn parse_attributes(cursor: &mut TokenCursor) -> Result<Attributes, ParsingError> {
     let mut res = Vec::new();
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
     cursor.advance();
 
     loop {
-        res.push(parse_attribute(cursor));
+        res.push(parse_attribute(cursor)?);
 
         if cursor.peek_kind() == Some(TokenKind::Comma) {
             cursor.advance();
@@ -524,31 +525,50 @@ fn parse_attributes(cursor: &mut TokenCursor) -> Vec<Attribute> {
         }
     }
 
-    res
+    Ok(res)
 }
 
-fn parse_attribute(cursor: &mut TokenCursor) -> Attribute {
-    let name = cursor
-        .advance_if(|t| t.is_some_and(|k| k.kind == TokenKind::Text))
-        .lexeme
-        .to_string();
-
-    let value = match cursor.peek_kind() {
-        Some(TokenKind::Comma) | None => AttributeValue::Boolean,
-        Some(TokenKind::Equals) => {
-            cursor.advance();
-            AttributeValue::String(
-                cursor
-                    .eat_while(|k| !matches!(k.kind, TokenKind::Comma | TokenKind::CloseCurly))
-                    .iter()
-                    .map(|k| k.lexeme)
-                    .collect(),
-            )
+fn parse_attribute(cursor: &mut TokenCursor) -> Result<Attribute, ParsingError> {
+    let tok = cursor.advance();
+    let (kind, short) = match tok.kind {
+        TokenKind::Hashbang => (AttributeKind::Id, true),
+        TokenKind::Dot => (AttributeKind::Class, true),
+        TokenKind::Text => {
+            let res = match tok.lexeme {
+                "href" => AttributeKind::Href,
+                "class" => AttributeKind::Class,
+                "id" => AttributeKind::Id,
+                _ => AttributeKind::Attr(tok.lexeme.to_owned()),
+            };
+            (res, false)
         }
-        Some(_) => panic!("invalid attribute value"),
+        _ => return Err(ParsingError::InvalidAttributeKind(tok.kind)),
     };
 
-    Attribute { name, value }
+    let value = if short {
+        parse_attribute_value(cursor)
+    } else {
+        match cursor.peek_kind() {
+            Some(TokenKind::Comma) | None => AttributeValue::Boolean,
+            Some(TokenKind::Equals) => {
+                cursor.advance();
+                parse_attribute_value(cursor)
+            }
+            Some(t) => return Err(ParsingError::InvalidAttribute(t)),
+        }
+    };
+
+    Ok(Attribute { kind, value })
+}
+
+fn parse_attribute_value(cursor: &mut TokenCursor) -> AttributeValue {
+    AttributeValue::String(
+        cursor
+            .eat_while(|k| !matches!(k.kind, TokenKind::Comma | TokenKind::CloseCurly))
+            .iter()
+            .map(|k| k.lexeme)
+            .collect(),
+    )
 }
 
 fn is_heading(cursor: &TokenCursor) -> bool {
@@ -597,7 +617,7 @@ fn parse_heading(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     };
 
     if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
-        builder.with_attributes(parse_attributes(cursor));
+        builder.with_attributes(parse_attributes(cursor)?);
     }
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenBrace));
@@ -657,7 +677,7 @@ mod tests {
                 InlineNode::new(
                     Inline::Naked(map_inlines([Inline::Text("Huge".to_string())])),
                     Some(vec![Attribute::new(
-                        "class".to_string(),
+                        AttributeKind::Class,
                         AttributeValue::String("huge".to_string()),
                     )]),
                 ),
@@ -754,7 +774,7 @@ mod tests {
                         body: map_inlines([Inline::Text("Red title".to_string())]),
                     },
                     Some(vec![Attribute::new(
-                        "class".to_string(),
+                        AttributeKind::Class,
                         AttributeValue::String("red".to_string()),
                     )]),
                 ),
@@ -783,7 +803,7 @@ mod tests {
                 InlineNode::new(
                     Inline::Code("p[data-attr] {  }".to_owned()),
                     Some(vec![Attribute::new(
-                        "language".to_owned(),
+                        AttributeKind::Attr("language".to_owned()),
                         AttributeValue::String("css".to_owned()),
                     )]),
                 ),
@@ -808,7 +828,7 @@ mod tests {
                 InlineNode::new(
                     Inline::Link(map_inlines([Inline::Text("my GitHub".to_owned())])),
                     Some(vec![Attribute::new(
-                        "href".to_owned(),
+                        AttributeKind::Href,
                         AttributeValue::String("https://github.com/sondr3".to_owned()),
                     )]),
                 ),
@@ -820,7 +840,7 @@ mod tests {
                         "URL".to_owned(),
                     )]))])),
                     Some(vec![Attribute::new(
-                        "href".to_owned(),
+                        AttributeKind::Href,
                         AttributeValue::String("/relative/url/".to_owned()),
                     )]),
                 ),
@@ -848,20 +868,40 @@ mod tests {
     #[test]
     fn test_parse_attributes() {
         let attributes = vec![
-            ("name", AttributeValue::Boolean),
-            ("name2=value", AttributeValue::String("value".to_string())),
+            (
+                "name",
+                Attribute::new("name".into(), AttributeValue::Boolean),
+            ),
+            (
+                "name2=value",
+                Attribute::new("name2".into(), AttributeValue::String("value".to_string())),
+            ),
             (
                 "href=/some/other/page.html",
-                AttributeValue::String("/some/other/page.html".to_string()),
+                Attribute::new(
+                    AttributeKind::Href,
+                    AttributeValue::String("/some/other/page.html".to_string()),
+                ),
+            ),
+            (
+                ".class",
+                Attribute::new(
+                    AttributeKind::Class,
+                    AttributeValue::String("class".to_owned()),
+                ),
+            ),
+            (
+                "#id",
+                Attribute::new(AttributeKind::Id, AttributeValue::String("id".to_owned())),
             ),
         ];
         for (attr, expected) in attributes {
             let lexer = tokenize(attr).collect::<Vec<_>>();
             let mut cursor = TokenCursor::new(lexer);
-            let res = parse_attribute(&mut cursor);
+            let res = parse_attribute(&mut cursor).unwrap();
 
             assert!(cursor.is_at_end());
-            assert_eq!(res.value, expected);
+            assert_eq!(res, expected);
         }
     }
 
@@ -869,22 +909,22 @@ mod tests {
     fn test_parse_multiple_attributes() {
         let lexer = tokenize("{name1=value,name2,name3=value2 and more}").collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
-        let res = parse_attributes(&mut cursor);
+        let res = parse_attributes(&mut cursor).unwrap();
 
         assert!(cursor.is_at_end());
         assert_eq!(
             res,
             vec![
                 Attribute {
-                    name: "name1".to_string(),
+                    kind: AttributeKind::Attr("name1".to_string()),
                     value: AttributeValue::String("value".to_string())
                 },
                 Attribute {
-                    name: "name2".to_string(),
+                    kind: AttributeKind::Attr("name2".to_string()),
                     value: AttributeValue::Boolean
                 },
                 Attribute {
-                    name: "name3".to_string(),
+                    kind: AttributeKind::Attr("name3".to_string()),
                     value: AttributeValue::String("value2 and more".to_string())
                 },
             ]

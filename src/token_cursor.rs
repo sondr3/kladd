@@ -54,7 +54,7 @@ impl<'a> TokenCursor<'a> {
         res
     }
 
-    pub fn advance_if(&mut self, mut pred: impl FnMut(Option<&Token>) -> bool) -> Token<'a> {
+    pub fn _advance_if(&mut self, mut pred: impl FnMut(Option<&Token>) -> bool) -> Token<'a> {
         debug_assert!(pred(self.peek()));
         if pred(self.peek()) {
             self.advance()
