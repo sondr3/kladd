@@ -38,7 +38,7 @@ impl<'a> TokenCursor<'a> {
     }
 
     pub fn is_at_end(&self) -> bool {
-        self.idx >= self.iter.len()
+        self.peek().is_some_and(|t| t.kind == TokenKind::Eof) || self.peek().is_none()
     }
 
     pub fn advance_while<F>(&mut self, parse_fn: F) -> Vec<Token<'a>>
