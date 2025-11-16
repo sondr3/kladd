@@ -29,8 +29,11 @@ pub enum AttributeValue {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AttributeKind {
+    /// A `.class` attribute
     Class,
+    /// A `#id` attribute
     Id,
+    /// A `href` attribute
     Href,
     Attr(String),
 }
@@ -165,7 +168,7 @@ pub enum Block {
     Paragraph(Inlines),
     Block(Blocks),
     Section(Blocks),
-    Div(Blocks),
+    Named { name: String, body: Blocks },
 }
 
 #[derive(Debug, PartialEq, Eq)]

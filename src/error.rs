@@ -12,7 +12,7 @@ pub enum ParsingError {
     InvalidAttributeKind(TokenKind),
     MissingAttribute(&'static str, &'static str),
     InvalidHeading(String),
-    MissingBlockEnd(&'static str),
+    MissingBlockEnd(String),
 }
 
 impl Display for ParsingError {

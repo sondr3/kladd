@@ -73,15 +73,15 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
                 visualize_block(node, buf, indent + 2);
             }
         }
-        Block::Div(nodes) => {
+        Block::Named { name, body } => {
             buf.push_str(&" ".repeat(indent));
-            buf.push_str("div");
+            buf.push_str(name);
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
 
             buf.push('\n');
-            for node in nodes {
+            for node in body {
                 visualize_block(node, buf, indent + 2);
             }
         }

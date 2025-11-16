@@ -139,61 +139,37 @@ pub fn parse_bang_node(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 }
 
 pub fn parse_named_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
-    if is_section(cursor) {
+    if is_named_block(cursor) {
         parse_section(cursor)
     } else {
-        todo!()
+        Ok(Parsed::Nothing)
     }
 }
 
-fn is_section(cursor: &TokenCursor) -> bool {
-    matches!((cursor.peek(), cursor.peek_nth(1)), (
-            Some(Token {
-                kind: TokenKind::ForwardSlash,
-                ..
-            }),
+fn is_named_block(cursor: &TokenCursor) -> bool {
+    match cursor.peek_kind() {
+        Some(TokenKind::ForwardSlash) => matches!(
+            cursor.peek_nth(1),
             Some(Token {
                 kind: TokenKind::Text,
-                lexeme,
-            }),
-        ) if *lexeme == "section")
+                ..
+            })
+        ),
+        _ => false,
+    }
 }
 
-fn is_block_end(cursor: &mut TokenCursor) -> bool {
-    matches!(
-        (cursor.peek(), cursor.peek_nth(1), cursor.peek_nth(2)),
-        (
-            Some(Token {
-                kind: TokenKind::BackwardSlash,
-                ..
-            }),
-            Some(Token {
-                kind: TokenKind::Text,
-                ..
-            }),
-            Some(Token {
-                kind: TokenKind::Newline,
-                ..
-            }),
-        )
-    )
-}
-
-fn is_section_end(cursor: &mut TokenCursor, curr_section: &str) -> bool {
-    matches!((cursor.peek(), cursor.peek_nth(1), cursor.peek_nth(2)), (
-            Some(Token {
-                kind: TokenKind::BackwardSlash,
-                ..
-            }),
-            Some(Token {
-                kind: TokenKind::Text,
-                lexeme,
-            }),
-            Some(Token {
-                kind: TokenKind::Newline,
-                ..
-            }),
-        ) if *lexeme == curr_section)
+fn is_block_end(cursor: &mut TokenCursor, is_lexeme: Option<&str>) -> bool {
+    match cursor.peek_kind() {
+        Some(TokenKind::BackwardSlash) => matches!((cursor.peek_nth(1), cursor.peek_nth_kind(2)), (
+                Some(Token {
+                    kind: TokenKind::Text,
+                    lexeme,
+                }),
+                Some(TokenKind::Newline | TokenKind::Eof),
+            ) if is_lexeme.is_none_or(|v| v == *lexeme)),
+        _ => false,
+    }
 }
 
 fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
@@ -202,7 +178,7 @@ fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     }
 
     cursor.advance();
-    let section = cursor.advance().lexeme;
+    let name = cursor.advance().lexeme;
 
     let mut builder = NodeBuilder::new();
     if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
@@ -212,7 +188,7 @@ fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     skip_whitespace(cursor);
     let mut body = Vec::new();
 
-    while !is_section_end(cursor, section) && !cursor.is_at_end() {
+    while !is_block_end(cursor, Some(name)) && !cursor.is_at_end() {
         match try_parsers(vec![parse_paragraph, parse_heading], cursor) {
             Ok(Parsed::Some(p)) => body.push(p),
             Ok(Parsed::Skipped) => continue,
@@ -222,14 +198,20 @@ fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
         skip_whitespace(cursor);
     }
 
-    if !is_section_end(cursor, section) {
-        return Err(ParsingError::MissingBlockEnd("section"));
+    if !is_block_end(cursor, Some(name)) {
+        return Err(ParsingError::MissingBlockEnd(name.to_owned()));
     }
 
     cursor.advance();
     cursor.advance();
 
-    builder.with_node(Block::Section(body));
+    match name {
+        "section" => builder.with_node(Block::Section(body)),
+        _ => builder.with_node(Block::Named {
+            name: name.to_owned(),
+            body,
+        }),
+    };
 
     Ok(Parsed::Some(builder.build()))
 }
@@ -320,7 +302,7 @@ pub fn parse_paragraph(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
     let mut builder = NodeBuilder::new();
 
     let mut body = Vec::new();
-    while !is_block_end(cursor) && !is_double_newline(cursor) && !cursor.is_at_end() {
+    while !is_block_end(cursor, None) && !is_double_newline(cursor) && !cursor.is_at_end() {
         match try_parsers(
             vec![parse_text, parse_simple_inline, parse_inline, parse_newline],
             cursor,

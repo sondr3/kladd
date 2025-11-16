@@ -93,7 +93,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
 
             buf.push_str("</section>");
         }
-        Block::Div(nodes) => {
+        Block::Named { name, body } => {
             buf.push_str("<div");
 
             if let Some(attrs) = &node.attributes {
@@ -101,7 +101,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             }
             buf.push('>');
 
-            for node in nodes {
+            for node in body {
                 htmlify_block(node, buf);
             }
 
