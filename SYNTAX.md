@@ -17,12 +17,19 @@ Can either have a value or be truthy:
 
 Attributes can be optionally be quoted, but unless they contain whitespace it's not required.
 
+### Shorthand attributes
+
+A `class` and `id` can optionally be shortened to their HTML selector.
+
+```text
+#section{.class, #id}
+```
+
 ## Inline elements
 
 ```text
 This is some @bold[text] with some @italic[nested @bold[text]]. You can also
 add arbitrary @{class=red}[classes] to text.
-
 ```
 
 ### Short inlines 
