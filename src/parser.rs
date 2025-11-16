@@ -515,9 +515,10 @@ fn parse_attributes(cursor: &mut TokenCursor) -> Result<Attributes, ParsingError
     cursor.advance();
 
     loop {
+        skip_whitespace(cursor);
         res.push(parse_attribute(cursor)?);
 
-        if cursor.peek_kind() == Some(TokenKind::Comma) {
+        if matches!(cursor.peek_kind(), Some(TokenKind::Comma)) {
             cursor.advance();
         } else if cursor.peek_kind() == Some(TokenKind::CloseCurly) {
             cursor.advance();
@@ -558,15 +559,22 @@ fn parse_attribute(cursor: &mut TokenCursor) -> Result<Attribute, ParsingError> 
         }
     };
 
+    skip_whitespace(cursor);
     Ok(Attribute { kind, value })
 }
 
 fn parse_attribute_value(cursor: &mut TokenCursor) -> AttributeValue {
     AttributeValue::String(
         cursor
-            .eat_while(|k| !matches!(k.kind, TokenKind::Comma | TokenKind::CloseCurly))
+            .eat_while(|k| {
+                !matches!(
+                    k.kind,
+                    TokenKind::Comma | TokenKind::CloseCurly | TokenKind::Whitespace
+                )
+            })
             .iter()
-            .map(|k| k.lexeme)
+            .filter(|k| !matches!(k.kind, TokenKind::DoubleQuote | TokenKind::SingleQoute))
+            .map(|k| k.lexeme.trim())
             .collect(),
     )
 }
@@ -907,7 +915,10 @@ mod tests {
 
     #[test]
     fn test_parse_multiple_attributes() {
-        let lexer = tokenize("{name1=value,name2,name3=value2 and more}").collect::<Vec<_>>();
+        let lexer = tokenize(
+            r#"{.some-long-class,  #and-long-id  , name1="value",name2, name3=value2 and more}"#,
+        )
+        .collect::<Vec<_>>();
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_attributes(&mut cursor).unwrap();
 
@@ -915,18 +926,20 @@ mod tests {
         assert_eq!(
             res,
             vec![
-                Attribute {
-                    kind: AttributeKind::Attr("name1".to_string()),
-                    value: AttributeValue::String("value".to_string())
-                },
-                Attribute {
-                    kind: AttributeKind::Attr("name2".to_string()),
-                    value: AttributeValue::Boolean
-                },
-                Attribute {
-                    kind: AttributeKind::Attr("name3".to_string()),
-                    value: AttributeValue::String("value2 and more".to_string())
-                },
+                Attribute::new(
+                    AttributeKind::Class,
+                    AttributeValue::String("some-long-class".to_string())
+                ),
+                Attribute::new(
+                    AttributeKind::Id,
+                    AttributeValue::String("and-long-id".to_string())
+                ),
+                Attribute::new("name1".into(), AttributeValue::String("value".to_string())),
+                Attribute::new("name2".into(), AttributeValue::Boolean),
+                Attribute::new(
+                    "name3".into(),
+                    AttributeValue::String("value2 and more".to_string())
+                ),
             ]
         );
     }
