@@ -16,5 +16,11 @@ metadata = things
 @italic[Warning]
 \warn
 
+/code{language=rust}
+fn main() {
+  println!("Hello, world!");
+}
+\code
+
 With some @bold[body] and {/italic/} content, and a "quoted" 'text', and <escaped>.
  "#;

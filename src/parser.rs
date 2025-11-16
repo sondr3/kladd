@@ -139,23 +139,23 @@ pub fn parse_bang_node(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 }
 
 pub fn parse_named_block(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
-    if is_named_block(cursor) {
-        parse_section(cursor)
-    } else {
-        Ok(Parsed::Nothing)
+    match is_named_block(cursor) {
+        Some("code") => parse_code(cursor),
+        Some(_) => parse_section(cursor),
+        None => Ok(Parsed::Nothing),
     }
 }
 
-fn is_named_block(cursor: &TokenCursor) -> bool {
+fn is_named_block<'a>(cursor: &'a TokenCursor) -> Option<&'a str> {
     match cursor.peek_kind() {
-        Some(TokenKind::ForwardSlash) => matches!(
-            cursor.peek_nth(1),
+        Some(TokenKind::ForwardSlash) => match cursor.peek_nth(1) {
             Some(Token {
                 kind: TokenKind::Text,
-                ..
-            })
-        ),
-        _ => false,
+                lexeme,
+            }) => Some(lexeme),
+            _ => None,
+        },
+        _ => None,
     }
 }
 
@@ -170,6 +170,58 @@ fn is_block_end(cursor: &mut TokenCursor, is_lexeme: Option<&str>) -> bool {
             ) if is_lexeme.is_none_or(|v| v == *lexeme)),
         _ => false,
     }
+}
+
+fn parse_code(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
+    if cursor.peek_kind() != Some(TokenKind::ForwardSlash) {
+        return Ok(Parsed::Nothing);
+    }
+
+    cursor.advance();
+    let name = cursor.advance().lexeme;
+
+    let mut builder = NodeBuilder::new();
+    if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
+        builder.with_attributes(parse_attributes(cursor)?);
+    }
+
+    skip_whitespace(cursor);
+    let mut body = String::new();
+
+    let mut counter = 1;
+    loop {
+        if is_named_block(cursor).is_some_and(|v| v == name) {
+            counter += 1;
+        } else if is_block_end(cursor, Some(name)) {
+            counter -= 1;
+        }
+
+        if counter == 0 {
+            break;
+        }
+        body.push_str(cursor.advance().lexeme);
+
+        if cursor.is_at_end() {
+            break;
+        }
+    }
+
+    if !is_block_end(cursor, Some(name)) {
+        return Err(ParsingError::MissingBlockEnd(name.to_owned()));
+    }
+
+    cursor.advance();
+    cursor.advance();
+
+    let language =
+        match builder.pop_attribute(|p| p.kind == AttributeKind::Attr("language".to_owned())) {
+            Some(a) => Some(a.value.inner()),
+            None => None,
+        };
+
+    builder.with_node(Block::Code { language, body });
+
+    Ok(Parsed::Some(builder.build()))
 }
 
 fn parse_section(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
@@ -371,8 +423,17 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
 
     match kind {
         InlineKind::Code => {
+            let language = match builder
+                .pop_attribute(|p| p.kind == AttributeKind::Attr("language".to_owned()))
+            {
+                Some(a) => Some(a.value.inner()),
+                None => None,
+            };
             let body = parse_code_inline(cursor);
-            builder.with_node(Inline::Code(body));
+            builder.with_node(Inline::Code {
+                language: language.map(|s| s.to_owned()),
+                body,
+            });
         }
         InlineKind::Link => {
             let href = match builder.pop_attribute(|p| p.kind == AttributeKind::Href) {
@@ -788,21 +849,21 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_code() {
+    fn test_parse_inline_code() {
         let inputs = vec![
             (
                 "@code[fn hello(world: &str) -> {}]",
-                InlineNode::from_node(Inline::Code("fn hello(world: &str) -> {}".to_owned())),
+                InlineNode::from_node(Inline::Code {
+                    language: None,
+                    body: "fn hello(world: &str) -> {}".to_owned(),
+                }),
             ),
             (
                 "@code{language=css}[p[data-attr] {  }]",
-                InlineNode::new(
-                    Inline::Code("p[data-attr] {  }".to_owned()),
-                    Some(vec![Attribute::new(
-                        AttributeKind::Attr("language".to_owned()),
-                        AttributeValue::String("css".to_owned()),
-                    )]),
-                ),
+                InlineNode::from_node(Inline::Code {
+                    language: Some("css".to_owned()),
+                    body: "p[data-attr] {  }".to_owned(),
+                }),
             ),
         ];
 
@@ -814,6 +875,35 @@ mod tests {
             assert!(cursor.is_at_end());
             assert_eq!(res, expected);
         }
+    }
+
+    #[test]
+    fn test_parse_code_block() {
+        let input = r#"/code{language=rust}
+fn main() {
+  println!("Hello, world!");
+}
+\code"#;
+
+        let lexer = tokenize(input);
+        let mut cursor = TokenCursor::new(lexer);
+        let res = parse_code(&mut cursor).unwrap().unwrap();
+
+        assert!(cursor.is_at_end());
+        assert_eq!(
+            res,
+            BlockNode::new(
+                Block::Code {
+                    language: Some("rust".to_owned()),
+                    body: r#"fn main() {
+  println!("Hello, world!");
+}
+"#
+                    .to_owned(),
+                },
+                None
+            )
+        );
     }
 
     #[test]

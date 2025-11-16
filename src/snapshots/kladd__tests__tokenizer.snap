@@ -352,6 +352,134 @@ expression: tokens
         lexeme: "\n\n",
     },
     Token {
+        kind: ForwardSlash,
+        lexeme: "/",
+    },
+    Token {
+        kind: Text,
+        lexeme: "code",
+    },
+    Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Text,
+        lexeme: "language",
+    },
+    Token {
+        kind: Equals,
+        lexeme: "=",
+    },
+    Token {
+        kind: Text,
+        lexeme: "rust",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
+        kind: Text,
+        lexeme: "fn main",
+    },
+    Token {
+        kind: Text,
+        lexeme: "(",
+    },
+    Token {
+        kind: Text,
+        lexeme: ") ",
+    },
+    Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: "  ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "println",
+    },
+    Token {
+        kind: Bang,
+        lexeme: "!",
+    },
+    Token {
+        kind: Text,
+        lexeme: "(",
+    },
+    Token {
+        kind: DoubleQuote,
+        lexeme: "\"",
+    },
+    Token {
+        kind: Text,
+        lexeme: "Hello",
+    },
+    Token {
+        kind: Comma,
+        lexeme: ",",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "world",
+    },
+    Token {
+        kind: Bang,
+        lexeme: "!",
+    },
+    Token {
+        kind: DoubleQuote,
+        lexeme: "\"",
+    },
+    Token {
+        kind: Text,
+        lexeme: ")",
+    },
+    Token {
+        kind: Text,
+        lexeme: ";",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n",
+    },
+    Token {
+        kind: BackwardSlash,
+        lexeme: "\\",
+    },
+    Token {
+        kind: Text,
+        lexeme: "code",
+    },
+    Token {
+        kind: Newline,
+        lexeme: "\n\n",
+    },
+    Token {
         kind: Text,
         lexeme: "With some ",
     },
@@ -482,5 +610,9 @@ expression: tokens
     Token {
         kind: Whitespace,
         lexeme: " ",
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
     },
 ]

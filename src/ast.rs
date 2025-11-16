@@ -37,6 +37,13 @@ impl AttributeValue {
             _ => panic!("Attempt at concating two different attribute values"),
         }
     }
+
+    pub fn inner(&self) -> String {
+        match self {
+            Self::String(v) => v.to_owned(),
+            Self::Boolean => "true".to_owned(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -152,6 +159,21 @@ impl<T> NodeBuilder<T> {
         self
     }
 
+    pub fn pop_attribute(
+        &mut self,
+        predicate: impl FnOnce(&mut Attribute) -> bool,
+    ) -> Option<Attribute> {
+        if let Some(attrs) = &mut self.attributes {
+            let res = attrs.pop_if(predicate);
+            if self.attributes.as_ref().is_some_and(|v| v.is_empty()) {
+                self.attributes = None;
+            }
+            return res;
+        }
+
+        None
+    }
+
     pub fn has_attributes(&self) -> bool {
         self.attributes.is_some()
     }
@@ -176,11 +198,21 @@ pub type Blocks = Vec<BlockNode>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Block {
-    Heading { level: u8, body: Inlines },
+    Heading {
+        level: u8,
+        body: Inlines,
+    },
     Paragraph(Inlines),
     Block(Blocks),
     Section(Blocks),
-    Named { name: String, body: Blocks },
+    Named {
+        name: String,
+        body: Blocks,
+    },
+    Code {
+        language: Option<String>,
+        body: String,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -219,9 +251,18 @@ pub enum Inline {
     Subscript(Inlines),
     Naked(Inlines),
     Quoted(Quote, Inlines),
-    Code(String),
-    Link(Inlines),
-    Custom { name: String, body: Inlines },
+    Code {
+        language: Option<String>,
+        body: String,
+    },
+    Link {
+        href: String,
+        body: Inlines,
+    },
+    Custom {
+        name: String,
+        body: Inlines,
+    },
     Softbreak,
     Hardbreak,
 }
@@ -238,7 +279,7 @@ impl Inline {
             InlineKind::Subscript => Inline::Subscript(body),
             InlineKind::Naked => Inline::Naked(body),
             InlineKind::Custom(ident) => Inline::Custom { name: ident, body },
-            InlineKind::Link => Inline::Link(body),
+            InlineKind::Link => panic!("cannot construct a @link from this method"),
             InlineKind::Code => panic!("cannot construct a @code from this method"),
         }
     }

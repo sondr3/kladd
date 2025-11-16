@@ -12,7 +12,7 @@ doc
         emph
           str text = "italic"
       str text = " and "
-      link href=https://www.eons.io,
+      link href=https://www.eons.io
         str text = "eons"
         str text = "."
         str text = "io"
@@ -22,6 +22,8 @@ doc
       emph
         str text = "Warning"
       softbreak
+  code
+    rust
   p
     str text = "With some "
     strong

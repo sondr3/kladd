@@ -92,6 +92,22 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
                 visualize_block(node, buf, indent + 2);
             }
         }
+        Block::Code { language, .. } => {
+            buf.push_str(&" ".repeat(indent));
+            buf.push_str("code");
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+
+            buf.push('\n');
+            buf.push_str(&" ".repeat(indent + 2));
+            match language {
+                Some(lang) => buf.push_str(lang),
+                None => buf.push_str("unknown language"),
+            };
+            buf.push('\n');
+        }
     }
 }
 
@@ -211,7 +227,7 @@ fn visualize_inline(node: &InlineNode, buf: &mut String, indent: usize) {
                 visualize_inline(node, buf, indent + 2);
             }
         }
-        Inline::Code(code) => {
+        Inline::Code { language, .. } => {
             buf.push_str(&" ".repeat(indent));
             buf.push('@');
             buf.push_str("code");
@@ -219,7 +235,10 @@ fn visualize_inline(node: &InlineNode, buf: &mut String, indent: usize) {
                 write_attributes(attrs, buf);
             }
             buf.push('\n');
-            buf.push_str(code);
+            match language {
+                Some(lang) => buf.push_str(lang),
+                None => buf.push_str("unknown language"),
+            }
         }
         Inline::Link { href, body } => {
             buf.push_str(&" ".repeat(indent));

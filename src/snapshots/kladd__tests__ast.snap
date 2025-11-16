@@ -79,8 +79,9 @@ Document {
                                     attributes: None,
                                 },
                                 Node {
-                                    node: Link(
-                                        [
+                                    node: Link {
+                                        href: "https://www.eons.io",
+                                        body: [
                                             Node {
                                                 node: Text(
                                                     "eons",
@@ -100,17 +101,8 @@ Document {
                                                 attributes: None,
                                             },
                                         ],
-                                    ),
-                                    attributes: Some(
-                                        [
-                                            Attribute {
-                                                kind: Href,
-                                                value: String(
-                                                    "https://www.eons.io",
-                                                ),
-                                            },
-                                        ],
-                                    ),
+                                    },
+                                    attributes: None,
                                 },
                                 Node {
                                     node: Softbreak,
@@ -162,6 +154,15 @@ Document {
                         attributes: None,
                     },
                 ],
+            },
+            attributes: None,
+        },
+        Node {
+            node: Code {
+                language: Some(
+                    "rust",
+                ),
+                body: "fn main() {\n  println!(\"Hello, world!\");\n}\n",
             },
             attributes: None,
         },

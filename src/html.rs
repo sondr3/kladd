@@ -136,6 +136,28 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             buf.push_str("</div>");
             buf.push('\n');
         }
+        Block::Code { language, body } => {
+            buf.push_str("<pre><code");
+
+            if let Some(lang) = language {
+                buf.push_str(" data-lang=");
+                buf.push('"');
+                buf.push_str(lang);
+                buf.push('"');
+            }
+
+            if let Some(attrs) = &node.attributes {
+                write_attributes(attrs, buf);
+            }
+            buf.push('>');
+            buf.push('\n');
+
+            buf.push_str(body);
+
+            buf.push_str("</pre></code>");
+
+            buf.push('\n');
+        }
     }
 }
 
@@ -209,15 +231,22 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
                 htmlify_inline(node, buf);
             }
         }
-        Inline::Code(code) => {
+        Inline::Code { language, body } => {
             buf.push_str("<code");
+
+            if let Some(lang) = language {
+                buf.push_str(" data-lang=");
+                buf.push('"');
+                buf.push_str(lang);
+                buf.push('"');
+            }
 
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
             buf.push('>');
 
-            buf.push_str(code);
+            buf.push_str(body);
             buf.push_str("</code>");
         }
         Inline::Link { href, body } => {
