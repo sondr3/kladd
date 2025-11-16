@@ -69,9 +69,9 @@ impl TokenCursor<'_> {
                 parse_comment(self);
                 Ok(Parsed::Skipped)
             }
-            None => Ok(Parsed::Nothing),
             Some(TokenKind::Bang) => parse_bang_node(self),
             Some(TokenKind::ForwardSlash) => parse_named_block(self),
+            None => Ok(Parsed::Nothing),
             _ => parse_block(self),
         }
     }
@@ -537,7 +537,7 @@ fn parse_attribute(cursor: &mut TokenCursor) -> Result<Attribute, ParsingError> 
         parse_attribute_value(cursor)
     } else {
         match cursor.peek_kind() {
-            Some(TokenKind::Comma) | None => AttributeValue::Boolean,
+            Some(TokenKind::Comma | TokenKind::Eof) | None => AttributeValue::Boolean,
             Some(TokenKind::Equals) => {
                 cursor.advance();
                 parse_attribute_value(cursor)
@@ -647,7 +647,7 @@ mod tests {
 
     #[test]
     fn test_single_inline() {
-        let lexer = tokenize("@bold[body]").collect::<Vec<_>>();
+        let lexer = tokenize("@bold[body]");
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_inline(&mut cursor).unwrap().unwrap();
 
@@ -693,7 +693,7 @@ mod tests {
         ];
 
         for (attr, expected) in inputs {
-            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let lexer = tokenize(attr);
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_inline(&mut cursor).unwrap().unwrap();
 
@@ -704,7 +704,7 @@ mod tests {
 
     #[test]
     fn test_parse_single_simple_inline() {
-        let lexer = tokenize("{*bold *}").collect::<Vec<_>>();
+        let lexer = tokenize("{*bold *}");
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_simple_inline(&mut cursor).unwrap().unwrap();
 
@@ -723,7 +723,7 @@ mod tests {
 
     #[test]
     fn test_parse_nested_simple_inlines() {
-        let lexer = tokenize("{*bold {/italic {~struck~}/} {=highlit=}*}").collect::<Vec<_>>();
+        let lexer = tokenize("{*bold {/italic {~struck~}/} {=highlit=}*}");
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_simple_inline(&mut cursor).unwrap().unwrap();
 
@@ -777,7 +777,7 @@ mod tests {
         ];
 
         for (attr, expected) in inputs {
-            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let lexer = tokenize(attr);
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_heading(&mut cursor).unwrap().unwrap();
 
@@ -806,7 +806,7 @@ mod tests {
         ];
 
         for (attr, expected) in inputs {
-            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let lexer = tokenize(attr);
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_inline(&mut cursor).unwrap().unwrap();
 
@@ -843,7 +843,7 @@ mod tests {
         ];
 
         for (attr, expected) in inputs {
-            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let lexer = tokenize(attr);
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_inline(&mut cursor).unwrap().unwrap();
 
@@ -855,7 +855,7 @@ mod tests {
     #[test]
     fn test_parse_link_without_href() {
         let input = "@link[without href]";
-        let lexer = tokenize(input).collect::<Vec<_>>();
+        let lexer = tokenize(input);
         let mut cursor = TokenCursor::new(lexer);
         assert!(parse_inline(&mut cursor).is_err());
     }
@@ -905,7 +905,7 @@ mod tests {
             ),
         ];
         for (attr, expected) in attributes {
-            let lexer = tokenize(attr).collect::<Vec<_>>();
+            let lexer = tokenize(attr);
             let mut cursor = TokenCursor::new(lexer);
             let res = parse_attribute(&mut cursor).unwrap();
 
@@ -918,8 +918,7 @@ mod tests {
     fn test_parse_multiple_attributes() {
         let lexer = tokenize(
             r#"{.some-long-class,  #and-long-id  , name1="value",name2, name3=value2 and more}"#,
-        )
-        .collect::<Vec<_>>();
+        );
         let mut cursor = TokenCursor::new(lexer);
         let res = parse_attributes(&mut cursor).unwrap();
 
@@ -947,7 +946,7 @@ mod tests {
 
     #[test]
     fn test_parse_duplicate_attributes() {
-        let lexer = tokenize(r#"{.some-class, class=duplicate}"#).collect::<Vec<_>>();
+        let lexer = tokenize(r#"{.some-class, class=duplicate}"#);
         let mut cursor = TokenCursor::new(lexer);
         assert_eq!(
             parse_attributes(&mut cursor),

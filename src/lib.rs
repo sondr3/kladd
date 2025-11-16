@@ -10,7 +10,7 @@ mod parser;
 mod token_cursor;
 
 pub fn parse_kladd(input: String) -> Result<Document, KladdError> {
-    let tokens = tokenize(&input).collect::<Vec<_>>();
+    let tokens = tokenize(&input);
     Ok(parse(tokens)?)
 }
 
@@ -26,7 +26,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let tokens = tokenize(TEST_INPUT).collect::<Vec<_>>();
+        let tokens = tokenize(TEST_INPUT);
         assert!(!tokens.is_empty());
         insta::assert_debug_snapshot!("tokenizer", tokens);
 

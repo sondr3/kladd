@@ -40,18 +40,25 @@ impl<'a> Token<'a> {
     }
 }
 
-pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token<'a>> {
+pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
     let mut cursor = CharCursor::new(input);
-    std::iter::from_fn(move || {
+    let mut res = Vec::with_capacity(input.len());
+
+    loop {
         cursor.start = cursor.curr;
         match cursor.advance_token() {
-            Token {
+            t @ Token {
                 kind: TokenKind::Eof,
                 ..
-            } => None,
-            tok => Some(tok),
+            } => {
+                res.push(t);
+                break;
+            }
+            tok => res.push(tok),
         }
-    })
+    }
+
+    res
 }
 
 pub fn is_horizontal_whitespace(c: Option<char>) -> bool {
