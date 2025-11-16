@@ -17,13 +17,13 @@ doc
         str text = "."
         str text = "io"
       softbreak
-    p
-      str text = "With some "
-      strong
-        str text = "body"
-      str text = " and "
-      emph
-        str text = "italic"
-      str text = " content, and a "quoted" 'text', and <escaped>."
-      softbreak
-      str text = " "
+  p
+    str text = "With some "
+    strong
+      str text = "body"
+    str text = " and "
+    emph
+      str text = "italic"
+    str text = " content, and a "quoted" 'text', and <escaped>."
+    softbreak
+    str text = " "

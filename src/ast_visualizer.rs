@@ -58,7 +58,7 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
         }
         Block::Block(nodes) => {
             for node in nodes {
-                visualize_block(node, buf, indent + 2);
+                visualize_block(node, buf, indent);
             }
         }
         Block::Section(nodes) => {
