@@ -18,16 +18,16 @@ impl<'a> TokenCursor<'a> {
         self.iter.get(self.idx)
     }
 
-    pub fn peek_kind(&self) -> Option<TokenKind> {
-        self.peek().map(|t| t.kind)
-    }
-
     pub fn peek_nth(&self, n: usize) -> Option<&Token<'a>> {
         self.iter.get(self.idx + n)
     }
 
+    pub fn peek_kind(&self) -> Option<TokenKind> {
+        self.peek().map(|t| t.kind)
+    }
+
     pub fn peek_nth_kind(&self, n: usize) -> Option<TokenKind> {
-        self.peek_nth(self.idx + n).map(|t| t.kind)
+        self.peek_nth(n).map(|t| t.kind)
     }
 
     pub fn advance(&mut self) -> Token<'a> {
