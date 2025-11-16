@@ -375,12 +375,13 @@ pub fn parse_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             builder.with_node(Inline::Code(body));
         }
         InlineKind::Link => {
-            if !builder.has_attributes() || !builder.has_attribute_by_kind(AttributeKind::Href) {
-                return Err(ParsingError::MissingAttribute("href", "link"));
-            }
+            let href = match builder.pop_attribute(|p| p.kind == AttributeKind::Href) {
+                Some(a) => a.value.inner(),
+                None => return Err(ParsingError::MissingAttribute("href", "link")),
+            };
 
             let body = parse_inline_body(cursor)?.unwrap();
-            builder.with_node(Inline::from_kind(kind, body));
+            builder.with_node(Inline::Link { href, body });
         }
         _ => {
             let body = parse_inline_body(cursor)?.unwrap();
@@ -821,23 +822,23 @@ mod tests {
             (
                 "@link{href=https://github.com/sondr3}[my GitHub]",
                 InlineNode::new(
-                    Inline::Link(map_inlines([Inline::Text("my GitHub".to_owned())])),
-                    Some(vec![Attribute::new(
-                        AttributeKind::Href,
-                        AttributeValue::String("https://github.com/sondr3".to_owned()),
-                    )]),
+                    Inline::Link {
+                        href: "https://github.com/sondr3".to_owned(),
+                        body: map_inlines([Inline::Text("my GitHub".to_owned())]),
+                    },
+                    None,
                 ),
             ),
             (
                 "@link{href=/relative/url/}[{/URL/}]",
                 InlineNode::new(
-                    Inline::Link(map_inlines([Inline::Italic(map_inlines([Inline::Text(
-                        "URL".to_owned(),
-                    )]))])),
-                    Some(vec![Attribute::new(
-                        AttributeKind::Href,
-                        AttributeValue::String("/relative/url/".to_owned()),
-                    )]),
+                    Inline::Link {
+                        href: "/relative/url/".to_owned(),
+                        body: map_inlines([Inline::Italic(map_inlines([Inline::Text(
+                            "URL".to_owned(),
+                        )]))]),
+                    },
+                    None,
                 ),
             ),
         ];

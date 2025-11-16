@@ -220,15 +220,19 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
             buf.push_str(code);
             buf.push_str("</code>");
         }
-        Inline::Link(nodes) => {
+        Inline::Link { href, body } => {
             buf.push_str("<a");
 
+            write_attribute(
+                &Attribute::new(AttributeKind::Href, AttributeValue::String(href.to_owned())),
+                buf,
+            );
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
             buf.push('>');
 
-            for node in nodes {
+            for node in body {
                 htmlify_inline(node, buf);
             }
             buf.push_str("</a>");

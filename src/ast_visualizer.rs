@@ -1,4 +1,7 @@
-use crate::ast::{AttributeValue, Attributes, Block, BlockNode, Document, Inline, InlineNode};
+use crate::ast::{
+    Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Document, Inline,
+    InlineNode,
+};
 
 pub fn visualize(doc: &Document) -> String {
     let mut buf = String::new();
@@ -12,17 +15,20 @@ pub fn visualize(doc: &Document) -> String {
     buf
 }
 
+fn write_attribute(attr: &Attribute, buf: &mut String) {
+    buf.push(' ');
+    attr.kind.write_ast(buf);
+    buf.push('=');
+    match &attr.value {
+        AttributeValue::String(v) => buf.push_str(v),
+        AttributeValue::Boolean => buf.push_str("true"),
+    }
+}
+
 fn write_attributes(attrs: &Attributes, buf: &mut String) {
     let len = attrs.len();
     for (i, attr) in attrs.iter().enumerate() {
-        buf.push(' ');
-        attr.kind.write_ast(buf);
-        buf.push('=');
-        match &attr.value {
-            AttributeValue::String(v) => buf.push_str(v),
-            AttributeValue::Boolean => buf.push_str("true"),
-        }
-
+        write_attribute(attr, buf);
         if i < len {
             buf.push(',');
         }
@@ -215,15 +221,20 @@ fn visualize_inline(node: &InlineNode, buf: &mut String, indent: usize) {
             buf.push('\n');
             buf.push_str(code);
         }
-        Inline::Link(nodes) => {
+        Inline::Link { href, body } => {
             buf.push_str(&" ".repeat(indent));
             buf.push_str("link");
+
+            write_attribute(
+                &Attribute::new(AttributeKind::Href, AttributeValue::String(href.to_owned())),
+                buf,
+            );
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }
             buf.push('\n');
 
-            for node in nodes {
+            for node in body {
                 visualize_inline(node, buf, indent + 2);
             }
         }
