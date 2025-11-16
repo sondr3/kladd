@@ -884,6 +884,20 @@ mod tests {
                 "#id",
                 Attribute::new(AttributeKind::Id, AttributeValue::String("id".to_owned())),
             ),
+            (
+                "class=some spaced class",
+                Attribute::new(
+                    AttributeKind::Class,
+                    AttributeValue::String("some spaced class".to_owned()),
+                ),
+            ),
+            (
+                r#"id="quoted id""#,
+                Attribute::new(
+                    AttributeKind::Id,
+                    AttributeValue::String("quoted id".to_owned()),
+                ),
+            ),
         ];
         for (attr, expected) in attributes {
             let lexer = tokenize(attr).collect::<Vec<_>>();
