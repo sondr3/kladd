@@ -5,11 +5,7 @@ expression: vizualised
 doc
   section class=important,
     heading level=1 some=value, other=value2,
-      str text = "Header "
-      str text = "-"
-      str text = "-"
-      str text = " "
-      str text = "dashed"
+      str text = "Header -- dashed"
     p
       strong
         str text = "bold "
@@ -17,9 +13,7 @@ doc
           str text = "italic"
       str text = " and "
       link href=https://www.eons.io
-        str text = "eons"
-        str text = "."
-        str text = "io"
+        str text = "eons.io"
       softbreak
   warn
     p

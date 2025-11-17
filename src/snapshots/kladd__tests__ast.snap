@@ -16,31 +16,7 @@ Document {
                             body: [
                                 Node {
                                     node: Text(
-                                        "Header ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "-",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "-",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "dashed",
+                                        "Header -- dashed",
                                     ),
                                     attributes: None,
                                 },
@@ -108,19 +84,7 @@ Document {
                                         body: [
                                             Node {
                                                 node: Text(
-                                                    "eons",
-                                                ),
-                                                attributes: None,
-                                            },
-                                            Node {
-                                                node: Text(
-                                                    ".",
-                                                ),
-                                                attributes: None,
-                                            },
-                                            Node {
-                                                node: Text(
-                                                    "io",
+                                                    "eons.io",
                                                 ),
                                                 attributes: None,
                                             },

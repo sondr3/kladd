@@ -190,11 +190,12 @@ fn htmlify_inline(node: &InlineNode, options: Option<HtmlOptions>, buf: &mut Str
     match &node.node {
         Inline::Text(str) => {
             if options.is_some_and(|o| o.smart_punctuation) {
-                buf.push_str(&escape_text(
-                    str.replace("...", "&hellip;")
+                buf.push_str(
+                    &escape_text(str)
+                        .replace("...", "&hellip;")
                         .replace("---", "&mdash;")
                         .replace("--", "&ndash;"),
-                ));
+                );
             } else {
                 buf.push_str(&escape_text(str));
             }

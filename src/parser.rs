@@ -105,9 +105,10 @@ fn parse_metadata(cursor: &mut TokenCursor) -> String {
     body.iter().map(|t| t.lexeme).collect()
 }
 
-pub fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
-    match cursor.peek_kind() {
-        Some(
+fn parse_inline_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
+    let mut body = String::new();
+    while let Some(tok) = cursor.peek_kind() {
+        match tok {
             TokenKind::Comma
             | TokenKind::Text
             | TokenKind::Whitespace
@@ -115,11 +116,24 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             | TokenKind::SingleQoute
             | TokenKind::Bang
             | TokenKind::Dot
-            | TokenKind::Dash,
-        ) => Ok(Parsed::Some(Node::new(
-            Inline::Text(cursor.advance().lexeme.to_string()),
-            None,
-        ))),
+            | TokenKind::Dash => body.push_str(cursor.advance().lexeme),
+            _ => break,
+        };
+    }
+
+    if body.is_empty() {
+        return Ok(Parsed::Nothing);
+    }
+
+    Ok(Parsed::Some(Node::from_node(Inline::Text(body))))
+}
+
+fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
+    if let Ok(Parsed::Some(text)) = parse_inline_text(cursor) {
+        return Ok(Parsed::Some(text));
+    }
+
+    match cursor.peek_kind() {
         Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
         Some(TokenKind::At) => parse_inline(cursor),
         Some(TokenKind::Newline) => {
@@ -816,12 +830,7 @@ mod tests {
                 "!title[Hello, world]",
                 BlockNode::from_node(Block::Heading {
                     level: 1,
-                    body: map_inlines([
-                        Inline::Text("Hello".to_string()),
-                        Inline::Text(",".to_string()),
-                        Inline::Text(" ".to_string()),
-                        Inline::Text("world".to_string()),
-                    ]),
+                    body: map_inlines([Inline::Text("Hello, world".to_string())]),
                 }),
             ),
             (
