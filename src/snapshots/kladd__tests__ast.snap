@@ -16,7 +16,31 @@ Document {
                             body: [
                                 Node {
                                     node: Text(
-                                        "Header",
+                                        "Header ",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        "-",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        "-",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        " ",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        "dashed",
                                     ),
                                     attributes: None,
                                 },

@@ -145,7 +145,23 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "Header",
+        lexeme: "Header ",
+    },
+    Token {
+        kind: Dash,
+        lexeme: "-",
+    },
+    Token {
+        kind: Dash,
+        lexeme: "-",
+    },
+    Token {
+        kind: Whitespace,
+        lexeme: " ",
+    },
+    Token {
+        kind: Text,
+        lexeme: "dashed",
     },
     Token {
         kind: CloseBrace,

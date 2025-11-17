@@ -114,7 +114,8 @@ pub fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             | TokenKind::DoubleQuote
             | TokenKind::SingleQoute
             | TokenKind::Bang
-            | TokenKind::Dot,
+            | TokenKind::Dot
+            | TokenKind::Dash,
         ) => Ok(Parsed::Some(Node::new(
             Inline::Text(cursor.advance().lexeme.to_string()),
             None,

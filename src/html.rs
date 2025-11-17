@@ -5,11 +5,36 @@ use crate::ast::{
     InlineNode,
 };
 
-pub fn to_html(Document { body, .. }: &Document) -> String {
+#[derive(Debug, Clone, Copy)]
+pub struct HtmlOptions {
+    /// Render newlines as actual newlines in the HTML
+    preserve_newlines: bool,
+    /// Convert things like `...` into `…`
+    smart_punctuation: bool,
+}
+
+impl Default for HtmlOptions {
+    fn default() -> Self {
+        Self {
+            preserve_newlines: false,
+            smart_punctuation: true,
+        }
+    }
+}
+
+pub fn to_html(doc: &Document) -> String {
+    inner_to_html(doc, None)
+}
+
+pub fn to_html_with_options(doc: &Document, options: HtmlOptions) -> String {
+    inner_to_html(doc, Some(options))
+}
+
+fn inner_to_html(Document { body, .. }: &Document, options: Option<HtmlOptions>) -> String {
     let mut res = String::new();
 
     for elem in body {
-        htmlify_block(elem, &mut res);
+        htmlify_block(elem, options, &mut res);
     }
 
     res
@@ -47,7 +72,7 @@ fn write_attributes(attrs: &Attributes, buf: &mut String) {
     }
 }
 
-fn htmlify_block(node: &BlockNode, buf: &mut String) {
+fn htmlify_block(node: &BlockNode, options: Option<HtmlOptions>, buf: &mut String) {
     match &node.node {
         Block::Heading { level, body } => {
             buf.push('<');
@@ -59,7 +84,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             buf.push('>');
 
             for node in body {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
 
             buf.push_str("</");
@@ -71,14 +96,14 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             buf.push_str("<p>");
 
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
 
             buf.push_str("</p>");
         }
         Block::Block(nodes) => {
             for node in nodes {
-                htmlify_block(node, buf);
+                htmlify_block(node, options, buf);
             }
         }
         Block::Section(nodes) => {
@@ -91,7 +116,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             buf.push('\n');
 
             for node in nodes {
-                htmlify_block(node, buf);
+                htmlify_block(node, options, buf);
             }
 
             buf.push_str("</section>");
@@ -130,7 +155,7 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
             buf.push('\n');
 
             for node in body {
-                htmlify_block(node, buf);
+                htmlify_block(node, options, buf);
             }
 
             buf.push_str("</div>");
@@ -161,55 +186,65 @@ fn htmlify_block(node: &BlockNode, buf: &mut String) {
     }
 }
 
-fn htmlify_inline(node: &InlineNode, buf: &mut String) {
+fn htmlify_inline(node: &InlineNode, options: Option<HtmlOptions>, buf: &mut String) {
     match &node.node {
-        Inline::Text(str) => buf.push_str(&escape_text(str)),
+        Inline::Text(str) => {
+            if options.is_some_and(|o| o.smart_punctuation) {
+                buf.push_str(&escape_text(
+                    str.replace("...", "&hellip;")
+                        .replace("---", "&mdash;")
+                        .replace("--", "&ndash;"),
+                ));
+            } else {
+                buf.push_str(&escape_text(str));
+            }
+        }
         Inline::Strong(nodes) => {
             buf.push_str("<strong>");
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</strong>");
         }
         Inline::Italic(nodes) => {
             buf.push_str("<em>");
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</em>");
         }
         Inline::Underline(nodes) => {
             buf.push_str(r#"<span class="underline">"#);
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</span>");
         }
         Inline::Highlight(nodes) => {
             buf.push_str("<mark>");
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</mark>");
         }
         Inline::Strikethrough(nodes) => {
             buf.push_str("<s>");
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</s>");
         }
         Inline::Superscript(nodes) => {
             buf.push_str("<sup>");
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</sup>");
         }
         Inline::Subscript(nodes) => {
             buf.push_str("<sub>");
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</sub>");
         }
@@ -222,13 +257,13 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
             buf.push('>');
 
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</span>");
         }
         Inline::Quoted(_quote, nodes) => {
             for node in nodes {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
         }
         Inline::Code { language, body } => {
@@ -262,7 +297,7 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
             buf.push('>');
 
             for node in body {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</a>");
         }
@@ -275,11 +310,17 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
             buf.push('>');
 
             for node in body {
-                htmlify_inline(node, buf);
+                htmlify_inline(node, options, buf);
             }
             buf.push_str("</span>");
         }
-        Inline::Softbreak => buf.push('\n'),
+        Inline::Softbreak => {
+            if options.is_some_and(|o| o.preserve_newlines) {
+                buf.push('\n')
+            } else {
+                buf.push(' ');
+            }
+        }
     }
 }
 

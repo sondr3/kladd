@@ -5,7 +5,11 @@ expression: vizualised
 doc
   section class=important,
     heading level=1 some=value, other=value2,
-      str text = "Header"
+      str text = "Header "
+      str text = "-"
+      str text = "-"
+      str text = " "
+      str text = "dashed"
     p
       strong
         str text = "bold "

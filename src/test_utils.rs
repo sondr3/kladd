@@ -7,7 +7,7 @@ metadata = things
 -- this is a comment
 
 /section{class=important}
-!h1{some=value,other=value2}[Header] 
+!h1{some=value,other=value2}[Header -- dashed] 
 
 {*bold {/italic/}*} and @link{href=https://www.eons.io}[eons.io]
 \section

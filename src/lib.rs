@@ -20,7 +20,10 @@ pub mod test_utils;
 #[cfg(test)]
 mod tests {
     use crate::{
-        ast_visualizer::visualize, html::to_html, lexer::tokenize, parser::parse,
+        ast_visualizer::visualize,
+        html::{HtmlOptions, to_html_with_options},
+        lexer::tokenize,
+        parser::parse,
         test_utils::TEST_INPUT,
     };
 
@@ -36,7 +39,7 @@ mod tests {
         let vizualised = visualize(&ast);
         insta::assert_snapshot!("visualize", vizualised);
 
-        let html = to_html(&ast);
+        let html = to_html_with_options(&ast, HtmlOptions::default());
         insta::assert_snapshot!("html", html);
     }
 }
