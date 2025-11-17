@@ -275,6 +275,5 @@ fn visualize_inline(node: &InlineNode, buf: &mut String, indent: usize) {
             buf.push_str("softbreak");
             buf.push('\n')
         }
-        Inline::Hardbreak => todo!(),
     }
 }

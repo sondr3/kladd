@@ -280,7 +280,6 @@ fn htmlify_inline(node: &InlineNode, buf: &mut String) {
             buf.push_str("</span>");
         }
         Inline::Softbreak => buf.push('\n'),
-        Inline::Hardbreak => todo!(),
     }
 }
 

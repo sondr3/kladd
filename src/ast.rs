@@ -264,7 +264,6 @@ pub enum Inline {
         body: Inlines,
     },
     Softbreak,
-    Hardbreak,
 }
 
 impl Inline {
