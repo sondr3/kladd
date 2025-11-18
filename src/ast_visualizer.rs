@@ -1,6 +1,6 @@
 use crate::ast::{
     Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Blocks, Document,
-    Inline, InlineNode,
+    Inline, InlineNode, Quote,
 };
 
 pub fn visualize_document(doc: &Document) -> String {
@@ -225,9 +225,13 @@ fn visualize_inline(node: &InlineNode, buf: &mut String, indent: usize) {
                 visualize_inline(node, buf, indent + 2);
             }
         }
-        Inline::Quoted(_quote, nodes) => {
+        Inline::Quoted(quote, nodes) => {
             buf.push_str(&" ".repeat(indent));
-            buf.push_str("quote");
+            buf.push_str(match quote {
+                Quote::Single => "single_quoted",
+                Quote::Double => "double_quoted",
+            });
+
             if let Some(attrs) = &node.attributes {
                 write_attributes(attrs, buf);
             }

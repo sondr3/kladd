@@ -2,7 +2,7 @@ use htmlize::{escape_attribute, escape_text};
 
 use crate::ast::{
     Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Document, Inline,
-    InlineNode,
+    InlineNode, Quote,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -262,9 +262,23 @@ fn htmlify_inline(node: &InlineNode, options: Option<HtmlOptions>, buf: &mut Str
             }
             buf.push_str("</span>");
         }
-        Inline::Quoted(_quote, nodes) => {
+        Inline::Quoted(quote, nodes) => {
+            match (quote, options.is_some_and(|o| o.smart_punctuation)) {
+                (Quote::Single, true) => buf.push('‘'),
+                (Quote::Double, true) => buf.push('“'),
+                (Quote::Single, false) => buf.push('\''),
+                (Quote::Double, false) => buf.push('"'),
+            }
+
             for node in nodes {
                 htmlify_inline(node, options, buf);
+            }
+
+            match (quote, options.is_some_and(|o| o.smart_punctuation)) {
+                (Quote::Single, true) => buf.push('’'),
+                (Quote::Double, true) => buf.push('”'),
+                (Quote::Single, false) => buf.push('\''),
+                (Quote::Double, false) => buf.push('"'),
             }
         }
         Inline::Code { language, body } => {

@@ -12,4 +12,4 @@ fn main() {
   println!("Hello, world!");
 }
 </pre></code>
-<p>With some <strong>body</strong> and <em>italic</em> content, and a "quoted" 'text', and &lt;escaped&gt;.  </p>
+<p>With some <strong>body</strong> and <em>italic</em> content, and a “quoted” ‘text’, and &lt;escaped&gt;.  </p>

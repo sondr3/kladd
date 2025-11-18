@@ -197,7 +197,47 @@ Document {
                                 },
                                 Node {
                                     node: Text(
-                                        " content, and a \"quoted\" 'text', and <escaped>.",
+                                        " content, and a ",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Quoted(
+                                        Double,
+                                        [
+                                            Node {
+                                                node: Text(
+                                                    "quoted",
+                                                ),
+                                                attributes: None,
+                                            },
+                                        ],
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        " ",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Quoted(
+                                        Single,
+                                        [
+                                            Node {
+                                                node: Text(
+                                                    "text",
+                                                ),
+                                                attributes: None,
+                                            },
+                                        ],
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        ", and <escaped>.",
                                     ),
                                     attributes: None,
                                 },

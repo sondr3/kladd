@@ -1,3 +1,5 @@
+use crate::lexer::TokenKind;
+
 #[derive(Debug)]
 pub struct Document {
     pub body: Blocks,
@@ -215,6 +217,16 @@ pub enum Block {
 pub enum Quote {
     Single,
     Double,
+}
+
+impl From<TokenKind> for Quote {
+    fn from(value: TokenKind) -> Self {
+        match value {
+            TokenKind::DoubleQuote => Quote::Double,
+            TokenKind::SingleQoute => Quote::Single,
+            _ => panic!("attempting to convert {:?} into quote", value),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

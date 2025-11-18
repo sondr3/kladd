@@ -4,7 +4,7 @@ use serde::de::DeserializeOwned;
 use crate::{
     ast::{
         Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Blocks, Document,
-        Inline, InlineKind, InlineNode, Inlines, Node, NodeBuilder,
+        Inline, InlineKind, InlineNode, Inlines, Node, NodeBuilder, Quote,
     },
     error::ParsingError,
     lexer::{Token, TokenKind},
@@ -155,8 +155,6 @@ fn parse_inline_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             TokenKind::Comma
             | TokenKind::Text
             | TokenKind::Whitespace
-            | TokenKind::DoubleQuote
-            | TokenKind::SingleQoute
             | TokenKind::Bang
             | TokenKind::Dot
             | TokenKind::Dash => body.push_str(cursor.advance().lexeme),
@@ -171,6 +169,44 @@ fn parse_inline_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     Ok(Parsed::Some(Node::from_node(Inline::Text(body))))
 }
 
+fn parse_quoted_text(cursor: &mut TokenCursor, kind: TokenKind) -> ParseResult<InlineNode> {
+    debug_assert!(cursor.peek_kind() == Some(kind));
+    cursor.advance();
+    let quote = Quote::from(kind);
+
+    let mut builder = NodeBuilder::new();
+    let mut body = Vec::new();
+    while let Ok(Parsed::Some(tok)) = parse_inlines_not_quoted(cursor, kind) {
+        body.push(tok);
+    }
+
+    debug_assert!(cursor.peek_kind() == Some(kind));
+    cursor.advance();
+
+    builder.with_node(Inline::Quoted(quote, body));
+    Ok(Parsed::Some(builder.build()))
+}
+
+fn parse_inlines_not_quoted(cursor: &mut TokenCursor, curr: TokenKind) -> ParseResult<InlineNode> {
+    if let Ok(Parsed::Some(text)) = parse_inline_text(cursor) {
+        return Ok(Parsed::Some(text));
+    }
+
+    match cursor.peek_kind() {
+        Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
+        Some(TokenKind::At) => parse_inline(cursor),
+        Some(TokenKind::Newline) => {
+            cursor.advance();
+            Ok(Parsed::Some(Node::new(Inline::Softbreak, None)))
+        }
+        Some(t @ (TokenKind::SingleQoute | TokenKind::DoubleQuote)) if t == curr => {
+            Ok(Parsed::Nothing)
+        }
+        Some(t) => Err(ParsingError::UnexpectedTokenKind(t, "quoted inline")),
+        None => Err(ParsingError::UnexpectedEnd),
+    }
+}
+
 fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     if let Ok(Parsed::Some(text)) = parse_inline_text(cursor) {
         return Ok(Parsed::Some(text));
@@ -182,6 +218,9 @@ fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
         Some(TokenKind::Newline) => {
             cursor.advance();
             Ok(Parsed::Some(Node::new(Inline::Softbreak, None)))
+        }
+        Some(t @ TokenKind::SingleQoute) | Some(t @ TokenKind::DoubleQuote) => {
+            parse_quoted_text(cursor, t)
         }
         Some(t) => Err(ParsingError::UnexpectedTokenKind(t, "inline")),
         None => Err(ParsingError::UnexpectedEnd),
@@ -354,27 +393,6 @@ fn is_double_newline(cursor: &mut TokenCursor) -> bool {
     }
 }
 
-fn is_special_token(kind: TokenKind) -> bool {
-    matches!(
-        kind,
-        TokenKind::At | TokenKind::OpenCurly | TokenKind::Newline | TokenKind::Hashbang
-    )
-}
-
-fn parse_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
-    let text: String = cursor
-        .advance_while(|c| c.peek_kind().is_some_and(|k| !is_special_token(k)))
-        .iter()
-        .map(|t| t.lexeme)
-        .collect();
-
-    if text.is_empty() {
-        Ok(Parsed::Skipped)
-    } else {
-        Ok(Parsed::Some(InlineNode::from_node(Inline::Text(text))))
-    }
-}
-
 fn parse_newline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     match cursor.peek() {
         Some(Token {
@@ -413,10 +431,7 @@ pub fn parse_paragraph(cursor: &mut TokenCursor) -> ParseResult<BlockNode> {
 
     let mut body = Vec::new();
     while !is_block_end(cursor, None) && !is_double_newline(cursor) && !cursor.is_at_end() {
-        match try_parsers(
-            vec![parse_text, parse_simple_inline, parse_inline, parse_newline],
-            cursor,
-        ) {
+        match try_parsers(vec![parse_inlines, parse_newline], cursor) {
             Ok(Parsed::Some(p)) => body.push(p),
             Ok(Parsed::Skipped) => continue,
             Ok(Parsed::Nothing) => continue,
