@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::de::DeserializeOwned;
+
 use crate::{
     ast::{
         Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Document, Inline,
@@ -8,7 +11,29 @@ use crate::{
     token_cursor::TokenCursor,
 };
 
-pub fn parse(input: Vec<Token>) -> Result<Document, ParsingError> {
+#[cfg(not(feature = "serde"))]
+pub fn parse(input: Vec<Token>) -> Result<(Document, Option<String>), ParsingError> {
+    parse_inner(input)
+}
+
+#[cfg(feature = "serde")]
+pub fn parse<T>(input: Vec<Token>) -> Result<(Document, Option<T>), ParsingError>
+where
+    T: DeserializeOwned,
+{
+    let (doc, meta) = parse_inner(input)?;
+    let meta = if let Some(inner) = meta {
+        match toml::from_str::<T>(&inner) {
+            Ok(res) => Some(res),
+            Err(e) => return Err(e.into()),
+        }
+    } else {
+        None
+    };
+    Ok((doc, meta))
+}
+
+pub fn parse_inner(input: Vec<Token>) -> Result<(Document, Option<String>), ParsingError> {
     let mut cursor = TokenCursor::new(input);
 
     cursor.eat_while(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace));
@@ -32,7 +57,7 @@ pub fn parse(input: Vec<Token>) -> Result<Document, ParsingError> {
         }
     }
 
-    Ok(Document { metadata, body })
+    Ok((Document { body }, metadata))
 }
 
 type ParseResult<T> = Result<Parsed<T>, ParsingError>;

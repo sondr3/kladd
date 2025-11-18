@@ -11,9 +11,15 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 htmlize = "1.0.6"
+serde = { version = "1.0.228", features = ["derive"], optional = true }
+toml = { version = "0.9.8", default-features = false, features = ["std", "serde", "parse", "preserve_order"], optional = true }
 
 [dev-dependencies]
 insta = "1.43.2"
+
+[features]
+# default = ["serde"]
+serde = ["dep:serde", "dep:toml"]
 
 [profile.dev.package]
 insta.opt-level = 3

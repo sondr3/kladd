@@ -28,8 +28,16 @@ expression: tokens
         lexeme: " ",
     },
     Token {
+        kind: DoubleQuote,
+        lexeme: "\"",
+    },
+    Token {
         kind: Text,
         lexeme: "things",
+    },
+    Token {
+        kind: DoubleQuote,
+        lexeme: "\"",
     },
     Token {
         kind: Newline,

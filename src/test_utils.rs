@@ -1,7 +1,7 @@
 #[cfg(test)]
 pub const TEST_INPUT: &str = r#"
 +++
-metadata = things
+metadata = "things"
 +++
 
 -- this is a comment

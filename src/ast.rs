@@ -1,6 +1,5 @@
 #[derive(Debug)]
 pub struct Document {
-    pub metadata: Option<String>,
     pub body: Blocks,
     // pub references: HashMap<String, String>,
     // pub footnotes: HashMap<String, String>,
@@ -14,10 +13,7 @@ impl Default for Document {
 
 impl Document {
     pub fn new() -> Self {
-        Document {
-            metadata: None,
-            body: Vec::new(),
-        }
+        Document { body: Vec::new() }
     }
 }
 

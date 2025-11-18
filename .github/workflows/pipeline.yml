@@ -16,10 +16,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: build
-        run: cargo test --no-run
+        run: cargo test --no-run --all-features
 
       - name: test
-        run: cargo test -- --nocapture --quiet
+        run: |
+          cargo test -- --nocapture --quiet
+          cargo test --all-features -- --nocapture --quiet
 
       - name: formatting
         run: cargo fmt --all -- --check
