@@ -241,6 +241,7 @@ pub enum InlineKind {
     Naked,
     Code,
     Link,
+    SingleQuote,
     Custom(String),
 }
 
@@ -285,6 +286,7 @@ impl Inline {
             InlineKind::Superscript => Inline::Superscript(body),
             InlineKind::Subscript => Inline::Subscript(body),
             InlineKind::Naked => Inline::Naked(body),
+            InlineKind::SingleQuote => Inline::Quoted(Quote::Single, body),
             InlineKind::Custom(ident) => Inline::Custom { name: ident, body },
             InlineKind::Link => panic!("cannot construct a @link from this method"),
             InlineKind::Code => panic!("cannot construct a @code from this method"),

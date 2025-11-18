@@ -156,6 +156,7 @@ fn parse_inline_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             | TokenKind::Text
             | TokenKind::Whitespace
             | TokenKind::Bang
+            | TokenKind::SingleQoute
             | TokenKind::Dot
             | TokenKind::Dash => body.push_str(cursor.advance().lexeme),
             _ => break,
@@ -176,7 +177,7 @@ fn parse_quoted_text(cursor: &mut TokenCursor, kind: TokenKind) -> ParseResult<I
 
     let mut builder = NodeBuilder::new();
     let mut body = Vec::new();
-    while let Ok(Parsed::Some(tok)) = parse_inlines_not_quoted(cursor, kind) {
+    while let Ok(Parsed::Some(tok)) = parse_inlines_not_quoted(cursor) {
         body.push(tok);
     }
 
@@ -187,7 +188,7 @@ fn parse_quoted_text(cursor: &mut TokenCursor, kind: TokenKind) -> ParseResult<I
     Ok(Parsed::Some(builder.build()))
 }
 
-fn parse_inlines_not_quoted(cursor: &mut TokenCursor, curr: TokenKind) -> ParseResult<InlineNode> {
+fn parse_inlines_not_quoted(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     if let Ok(Parsed::Some(text)) = parse_inline_text(cursor) {
         return Ok(Parsed::Some(text));
     }
@@ -199,9 +200,7 @@ fn parse_inlines_not_quoted(cursor: &mut TokenCursor, curr: TokenKind) -> ParseR
             cursor.advance();
             Ok(Parsed::Some(Node::new(Inline::Softbreak, None)))
         }
-        Some(t @ (TokenKind::SingleQoute | TokenKind::DoubleQuote)) if t == curr => {
-            Ok(Parsed::Nothing)
-        }
+        Some(TokenKind::DoubleQuote) => Ok(Parsed::Nothing),
         Some(t) => Err(ParsingError::UnexpectedTokenKind(t, "quoted inline")),
         None => Err(ParsingError::UnexpectedEnd),
     }
@@ -219,9 +218,7 @@ fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             cursor.advance();
             Ok(Parsed::Some(Node::new(Inline::Softbreak, None)))
         }
-        Some(t @ TokenKind::SingleQoute) | Some(t @ TokenKind::DoubleQuote) => {
-            parse_quoted_text(cursor, t)
-        }
+        Some(t @ TokenKind::DoubleQuote) => parse_quoted_text(cursor, t),
         Some(t) => Err(ParsingError::UnexpectedTokenKind(t, "inline")),
         None => Err(ParsingError::UnexpectedEnd),
     }
@@ -578,6 +575,7 @@ fn is_valid_simple_inline(kind: Option<TokenKind>) -> bool {
                 | TokenKind::Underscore
                 | TokenKind::Equals
                 | TokenKind::Tilde
+                | TokenKind::SingleQoute
         )
     )
 }
@@ -599,15 +597,18 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
         Some(t @ TokenKind::Underscore) => (t, InlineKind::Underline),
         Some(t @ TokenKind::Equals) => (t, InlineKind::Highlight),
         Some(t @ TokenKind::Tilde) => (t, InlineKind::Strikethrough),
+        Some(t @ TokenKind::SingleQoute) => dbg!((t, InlineKind::SingleQuote)),
         Some(t) => return Err(ParsingError::UnexpectedTokenKind(t, "simple inlines")),
         _ => return Err(ParsingError::UnexpectedEnd),
     };
 
-    cursor.advance();
+    dbg!(cursor.advance());
 
     let mut body = Vec::new();
-    while cursor.peek_kind() != Some(t) && !cursor.is_at_end() {
-        match parse_inlines(cursor) {
+    while (cursor.peek_kind() != Some(t) && cursor.peek_nth_kind(1) != Some(TokenKind::CloseCurly))
+        && !cursor.is_at_end()
+    {
+        match dbg!(parse_inlines(cursor)) {
             Ok(Parsed::Some(p)) => body.push(p),
             Ok(Parsed::Skipped) => todo!(),
             Ok(Parsed::Nothing) => todo!(),
@@ -615,12 +616,13 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
         }
     }
 
-    node_builder.with_node(Inline::from_kind(kind, body));
+    node_builder.with_node(dbg!(Inline::from_kind(kind, body)));
+    dbg!(&node_builder);
 
     debug_assert!(cursor.peek_kind() == Some(t));
-    cursor.advance();
+    dbg!(cursor.advance());
     debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseCurly));
-    cursor.advance();
+    dbg!(cursor.advance());
 
     Ok(Parsed::Some(node_builder.build()))
 }

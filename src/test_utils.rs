@@ -7,7 +7,7 @@ metadata = "things"
 -- this is a comment
 
 /section{class=important}
-!h1{some=value,other=value2}[Header -- dashed] 
+!h1{some=value,other=value2}[Header -- it's dashed] 
 
 {*bold {/italic/}*} and @link{href=https://www.eons.io}[eons.io]
 \section
@@ -22,5 +22,5 @@ fn main() {
 }
 \code
 
-With some @bold[body] and {/italic/} content, and a "quoted" 'text', and <escaped>.
+With some @bold[body] and {/italic/} content, and a "quoted" {'text'}, and <escaped>.
  "#;
