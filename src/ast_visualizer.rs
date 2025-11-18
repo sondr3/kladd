@@ -1,15 +1,25 @@
 use crate::ast::{
-    Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Document, Inline,
-    InlineNode,
+    Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Blocks, Document,
+    Inline, InlineNode,
 };
 
-pub fn visualize(doc: &Document) -> String {
+pub fn visualize_document(doc: &Document) -> String {
     let mut buf = String::new();
 
     buf.push_str("doc");
     buf.push('\n');
     for node in &doc.body {
         visualize_block(node, &mut buf, 2);
+    }
+
+    buf
+}
+
+pub fn visualize_blocks(blocks: Blocks) -> String {
+    let mut buf = String::new();
+
+    for node in &blocks {
+        visualize_block(node, &mut buf, 0);
     }
 
     buf

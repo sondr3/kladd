@@ -1,0 +1,14 @@
+---
+source: src/lib.rs
+expression: vizualised
+---
+p
+  str text = "This is some "
+  strong
+    str text = "simple"
+  str text = " input without metadata."
+p
+  str text = "It goes "
+  emph
+    str text = "across"
+  str text = " multiple paragraphs"

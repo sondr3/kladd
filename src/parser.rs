@@ -3,8 +3,8 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     ast::{
-        Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Document, Inline,
-        InlineKind, InlineNode, Inlines, Node, NodeBuilder,
+        Attribute, AttributeKind, AttributeValue, Attributes, Block, BlockNode, Blocks, Document,
+        Inline, InlineKind, InlineNode, Inlines, Node, NodeBuilder,
     },
     error::ParsingError,
     lexer::{Token, TokenKind},
@@ -58,6 +58,24 @@ pub fn parse_inner(input: Vec<Token>) -> Result<(Document, Option<String>), Pars
     }
 
     Ok((Document { body }, metadata))
+}
+
+pub fn parse_simple(input: Vec<Token>) -> Result<Blocks, ParsingError> {
+    let mut cursor = TokenCursor::new(input);
+
+    cursor.eat_while(|k| matches!(k.kind, TokenKind::Newline | TokenKind::Whitespace));
+
+    let mut body = Vec::new();
+    loop {
+        match cursor.advance_token() {
+            Ok(Parsed::Some(t)) => body.push(t),
+            Ok(Parsed::Skipped) => continue,
+            Ok(Parsed::Nothing) => break,
+            Err(e) => return Err(e),
+        }
+    }
+
+    Ok(body)
 }
 
 type ParseResult<T> = Result<Parsed<T>, ParsingError>;
