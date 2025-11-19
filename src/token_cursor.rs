@@ -14,6 +14,18 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
+    pub fn prev(&self) -> Option<&Token<'a>> {
+        if self.idx < 1 {
+            None
+        } else {
+            self.iter.get(self.idx - 1)
+        }
+    }
+
+    pub fn _prev_kind(&self) -> Option<TokenKind> {
+        self.prev().map(|t| t.kind)
+    }
+
     pub fn peek(&self) -> Option<&Token<'a>> {
         self.iter.get(self.idx)
     }

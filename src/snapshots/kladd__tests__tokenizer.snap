@@ -169,7 +169,15 @@ expression: tokens
     },
     Token {
         kind: Text,
-        lexeme: "dashed",
+        lexeme: "it",
+    },
+    Token {
+        kind: SingleQoute,
+        lexeme: "'",
+    },
+    Token {
+        kind: Text,
+        lexeme: "s dashed",
     },
     Token {
         kind: CloseBrace,
@@ -592,6 +600,10 @@ expression: tokens
         lexeme: " ",
     },
     Token {
+        kind: OpenCurly,
+        lexeme: "{",
+    },
+    Token {
         kind: SingleQoute,
         lexeme: "'",
     },
@@ -602,6 +614,10 @@ expression: tokens
     Token {
         kind: SingleQoute,
         lexeme: "'",
+    },
+    Token {
+        kind: CloseCurly,
+        lexeme: "}",
     },
     Token {
         kind: Comma,

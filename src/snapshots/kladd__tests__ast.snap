@@ -13,7 +13,19 @@ Document {
                             body: [
                                 Node {
                                     node: Text(
-                                        "Header -- dashed",
+                                        "Header -- it",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        "'",
+                                    ),
+                                    attributes: None,
+                                },
+                                Node {
+                                    node: Text(
+                                        "s dashed",
                                     ),
                                     attributes: None,
                                 },

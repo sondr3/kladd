@@ -156,7 +156,6 @@ fn parse_inline_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             | TokenKind::Text
             | TokenKind::Whitespace
             | TokenKind::Bang
-            | TokenKind::SingleQoute
             | TokenKind::Dot
             | TokenKind::Dash => body.push_str(cursor.advance().lexeme),
             _ => break,
@@ -170,40 +169,52 @@ fn parse_inline_text(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
     Ok(Parsed::Some(Node::from_node(Inline::Text(body))))
 }
 
-fn parse_quoted_text(cursor: &mut TokenCursor, kind: TokenKind) -> ParseResult<InlineNode> {
-    debug_assert!(cursor.peek_kind() == Some(kind));
+fn parse_quoted(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
+    let quote = match cursor.peek_kind() {
+        Some(t @ (TokenKind::SingleQoute | TokenKind::DoubleQuote)) => t,
+        _ => return Ok(Parsed::Nothing),
+    };
+
+    let is_start = match cursor.prev() {
+        None => true,
+        Some(Token {
+            kind: TokenKind::Whitespace | TokenKind::Newline,
+            ..
+        }) => true,
+        Some(Token {
+            kind: TokenKind::Text,
+            lexeme,
+        }) => lexeme.ends_with(' '),
+        _ => false,
+    };
+
+    if !is_start {
+        return Ok(Parsed::Some(InlineNode::from_node(Inline::Text(
+            cursor.advance().lexeme.to_owned(),
+        ))));
+    }
+
+    debug_assert!(matches!(
+        cursor.peek_kind(),
+        Some(TokenKind::DoubleQuote | TokenKind::SingleQoute)
+    ));
     cursor.advance();
-    let quote = Quote::from(kind);
 
     let mut builder = NodeBuilder::new();
     let mut body = Vec::new();
-    while let Ok(Parsed::Some(tok)) = parse_inlines_not_quoted(cursor) {
-        body.push(tok);
+    while cursor.peek_kind() != Some(quote) {
+        match parse_inlines(cursor) {
+            Ok(Parsed::Some(b)) => body.push(b),
+            Ok(_) => break,
+            Err(e) => return Err(e),
+        }
     }
 
-    debug_assert!(cursor.peek_kind() == Some(kind));
+    debug_assert!(cursor.peek_kind() == Some(quote));
     cursor.advance();
 
-    builder.with_node(Inline::Quoted(quote, body));
+    builder.with_node(Inline::Quoted(Quote::from(quote), body));
     Ok(Parsed::Some(builder.build()))
-}
-
-fn parse_inlines_not_quoted(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
-    if let Ok(Parsed::Some(text)) = parse_inline_text(cursor) {
-        return Ok(Parsed::Some(text));
-    }
-
-    match cursor.peek_kind() {
-        Some(TokenKind::OpenCurly) => parse_simple_inline(cursor),
-        Some(TokenKind::At) => parse_inline(cursor),
-        Some(TokenKind::Newline) => {
-            cursor.advance();
-            Ok(Parsed::Some(Node::new(Inline::Softbreak, None)))
-        }
-        Some(TokenKind::DoubleQuote) => Ok(Parsed::Nothing),
-        Some(t) => Err(ParsingError::UnexpectedTokenKind(t, "quoted inline")),
-        None => Err(ParsingError::UnexpectedEnd),
-    }
 }
 
 fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
@@ -218,7 +229,7 @@ fn parse_inlines(cursor: &mut TokenCursor) -> ParseResult<InlineNode> {
             cursor.advance();
             Ok(Parsed::Some(Node::new(Inline::Softbreak, None)))
         }
-        Some(t @ TokenKind::DoubleQuote) => parse_quoted_text(cursor, t),
+        Some(TokenKind::DoubleQuote | TokenKind::SingleQoute) => parse_quoted(cursor),
         Some(t) => Err(ParsingError::UnexpectedTokenKind(t, "inline")),
         None => Err(ParsingError::UnexpectedEnd),
     }
@@ -597,18 +608,18 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
         Some(t @ TokenKind::Underscore) => (t, InlineKind::Underline),
         Some(t @ TokenKind::Equals) => (t, InlineKind::Highlight),
         Some(t @ TokenKind::Tilde) => (t, InlineKind::Strikethrough),
-        Some(t @ TokenKind::SingleQoute) => dbg!((t, InlineKind::SingleQuote)),
+        Some(t @ TokenKind::SingleQoute) => (t, InlineKind::SingleQuote),
         Some(t) => return Err(ParsingError::UnexpectedTokenKind(t, "simple inlines")),
         _ => return Err(ParsingError::UnexpectedEnd),
     };
 
-    dbg!(cursor.advance());
+    cursor.advance();
 
     let mut body = Vec::new();
     while (cursor.peek_kind() != Some(t) && cursor.peek_nth_kind(1) != Some(TokenKind::CloseCurly))
         && !cursor.is_at_end()
     {
-        match dbg!(parse_inlines(cursor)) {
+        match parse_inlines(cursor) {
             Ok(Parsed::Some(p)) => body.push(p),
             Ok(Parsed::Skipped) => todo!(),
             Ok(Parsed::Nothing) => todo!(),
@@ -616,13 +627,12 @@ pub fn parse_simple_inline(cursor: &mut TokenCursor) -> ParseResult<InlineNode> 
         }
     }
 
-    node_builder.with_node(dbg!(Inline::from_kind(kind, body)));
-    dbg!(&node_builder);
+    node_builder.with_node(Inline::from_kind(kind, body));
 
     debug_assert!(cursor.peek_kind() == Some(t));
-    dbg!(cursor.advance());
+    cursor.advance();
     debug_assert!(cursor.peek_kind() == Some(TokenKind::CloseCurly));
-    dbg!(cursor.advance());
+    cursor.advance();
 
     Ok(Parsed::Some(node_builder.build()))
 }
@@ -1019,6 +1029,51 @@ fn main() {
         let lexer = tokenize(input);
         let mut cursor = TokenCursor::new(lexer);
         assert!(parse_inline(&mut cursor).is_err());
+    }
+
+    #[test]
+    fn test_parse_quoted_text() {
+        let inputs = vec![
+            (
+                r#"isn't quoted"#,
+                BlockNode::from_node(Block::Paragraph(map_inlines([
+                    Inline::Text("isn".to_string()),
+                    Inline::Text("'".to_string()),
+                    Inline::Text("t quoted".to_string()),
+                ]))),
+            ),
+            (
+                r#" "this is double quoted" "#,
+                BlockNode::from_node(Block::Paragraph(map_inlines([
+                    Inline::Text(" ".to_string()),
+                    Inline::Quoted(
+                        Quote::Double,
+                        map_inlines([Inline::Text("this is double quoted".to_string())]),
+                    ),
+                    Inline::Text(" ".to_string()),
+                ]))),
+            ),
+            (
+                r#" 'this is single quoted' "#,
+                BlockNode::from_node(Block::Paragraph(map_inlines([
+                    Inline::Text(" ".to_string()),
+                    Inline::Quoted(
+                        Quote::Single,
+                        map_inlines([Inline::Text("this is single quoted".to_string())]),
+                    ),
+                    Inline::Text(" ".to_string()),
+                ]))),
+            ),
+        ];
+
+        for (attr, expected) in inputs {
+            let lexer = tokenize(attr);
+            let mut cursor = TokenCursor::new(lexer);
+            let res = parse_paragraph(&mut cursor).unwrap().unwrap();
+
+            assert!(cursor.is_at_end());
+            assert_eq!(res, expected);
+        }
     }
 
     #[test]
