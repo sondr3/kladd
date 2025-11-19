@@ -16,12 +16,10 @@ doc
       str text = " and "
       link href=https://www.eons.io
         str text = "eons.io"
-      softbreak
   warn
     p
       emph
         str text = "Warning"
-      softbreak
   code
     rust
   p

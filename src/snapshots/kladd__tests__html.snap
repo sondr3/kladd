@@ -4,9 +4,9 @@ expression: html
 ---
 <section class="important">
 <h1 data-some="value" data-other="value2">Header &ndash; it's dashed</h1>
-<p><strong>bold <em>italic</em></strong> and <a href="https://www.eons.io">eons.io</a> </p></section>
+<p><strong>bold <em>italic</em></strong> and <a href="https://www.eons.io">eons.io</a></p></section>
 <div class="warn">
-<p><em>Warning</em> </p></div>
+<p><em>Warning</em></p></div>
 <pre><code data-lang="rust">
 fn main() {
   println!("Hello, world!");

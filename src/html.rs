@@ -95,7 +95,10 @@ fn htmlify_block(node: &BlockNode, options: Option<HtmlOptions>, buf: &mut Strin
         Block::Paragraph(nodes) => {
             buf.push_str("<p>");
 
-            for node in nodes {
+            for (i, node) in nodes.iter().enumerate() {
+                if i == nodes.len() - 1 && matches!(node.node, Inline::Softbreak) {
+                    break;
+                }
                 htmlify_inline(node, options, buf);
             }
 

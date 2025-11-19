@@ -68,7 +68,10 @@ fn visualize_block(node: &BlockNode, buf: &mut String, indent: usize) {
             }
 
             buf.push('\n');
-            for node in nodes {
+            for (i, node) in nodes.iter().enumerate() {
+                if i == nodes.len() - 1 && matches!(node.node, Inline::Softbreak) {
+                    break;
+                }
                 visualize_inline(node, buf, indent + 2);
             }
         }
