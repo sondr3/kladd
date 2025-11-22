@@ -67,7 +67,7 @@ pub(crate) enum Parsed {
     Nothing,
 }
 
-type NewParseResult = Result<Parsed, ParsingError>;
+type ParseResult = Result<Parsed, ParsingError>;
 
 #[derive(Debug)]
 pub(crate) struct Parser<'a> {
@@ -105,7 +105,7 @@ impl<'a> Parser<'a> {
         self.nodes.push(AstNode::start_attrs(node, attrs));
     }
 
-    pub fn parse(&mut self) -> NewParseResult {
+    pub fn parse(&mut self) -> ParseResult {
         while self.cursor.peek_kind() != Some(TokenKind::Eof) {
             skip_whitespace(&mut self.cursor)?;
             match self.cursor.peek_kind() {
@@ -132,7 +132,7 @@ impl<'a> Parser<'a> {
     }
 }
 
-fn skip_whitespace(cursor: &mut TokenCursor) -> NewParseResult {
+fn skip_whitespace(cursor: &mut TokenCursor) -> ParseResult {
     while let Some(TokenKind::Newline | TokenKind::Whitespace) = cursor.peek_kind() {
         cursor.advance();
     }
@@ -140,7 +140,7 @@ fn skip_whitespace(cursor: &mut TokenCursor) -> NewParseResult {
     Ok(Parsed::Skipped)
 }
 
-fn parse_comment(cursor: &mut TokenCursor) -> NewParseResult {
+fn parse_comment(cursor: &mut TokenCursor) -> ParseResult {
     debug_assert!(cursor.peek_kind() == Some(TokenKind::Dash));
     cursor.advance();
 
@@ -164,7 +164,7 @@ fn parse_metadata(cursor: &mut TokenCursor) -> String {
     body.iter().map(|t| t.lexeme).collect()
 }
 
-fn parse_inline_text(parser: &mut Parser) -> NewParseResult {
+fn parse_inline_text(parser: &mut Parser) -> ParseResult {
     let mut body = String::new();
     while let Some(tok) = parser.cursor.peek_kind() {
         match tok {
@@ -186,7 +186,7 @@ fn parse_inline_text(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-fn parse_quoted(parser: &mut Parser) -> NewParseResult {
+fn parse_quoted(parser: &mut Parser) -> ParseResult {
     let quote = match parser.cursor.peek_kind() {
         Some(t @ (TokenKind::SingleQuote | TokenKind::DoubleQuote)) => t,
         _ => return Ok(Parsed::Nothing),
@@ -236,7 +236,7 @@ fn parse_quoted(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-fn parse_inlines(parser: &mut Parser) -> NewParseResult {
+fn parse_inlines(parser: &mut Parser) -> ParseResult {
     if let Ok(Parsed::Ok) = parse_inline_text(parser) {
         return Ok(Parsed::Ok);
     };
@@ -255,7 +255,7 @@ fn parse_inlines(parser: &mut Parser) -> NewParseResult {
     }
 }
 
-pub fn parse_bang_node(parser: &mut Parser) -> NewParseResult {
+pub fn parse_bang_node(parser: &mut Parser) -> ParseResult {
     if is_heading(&parser.cursor) {
         parse_heading(parser)
     } else {
@@ -263,7 +263,7 @@ pub fn parse_bang_node(parser: &mut Parser) -> NewParseResult {
     }
 }
 
-pub fn parse_named_block(parser: &mut Parser) -> NewParseResult {
+pub fn parse_named_block(parser: &mut Parser) -> ParseResult {
     match is_named_block(&parser.cursor) {
         Some("code") => parse_code(parser),
         Some(_) => parse_section(parser),
@@ -308,7 +308,7 @@ fn maybe_parse_attributes(cursor: &mut TokenCursor) -> Result<AstAttributes, Par
     }
 }
 
-fn parse_code(parser: &mut Parser) -> NewParseResult {
+fn parse_code(parser: &mut Parser) -> ParseResult {
     if parser.cursor.peek_kind() != Some(TokenKind::ForwardSlash) {
         return Ok(Parsed::Nothing);
     }
@@ -356,7 +356,7 @@ fn parse_code(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-fn parse_section(parser: &mut Parser) -> NewParseResult {
+fn parse_section(parser: &mut Parser) -> ParseResult {
     if parser.cursor.peek_kind() != Some(TokenKind::ForwardSlash) {
         return Ok(Parsed::Nothing);
     }
@@ -390,7 +390,7 @@ fn parse_section(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-pub fn parse_block(parser: &mut Parser) -> NewParseResult {
+pub fn parse_block(parser: &mut Parser) -> ParseResult {
     parser.skip_whitespace();
 
     parser.start(NodeKind::Block);
@@ -413,7 +413,7 @@ fn is_double_newline(cursor: &mut TokenCursor) -> bool {
     }
 }
 
-fn parse_newline(parser: &mut Parser) -> NewParseResult {
+fn parse_newline(parser: &mut Parser) -> ParseResult {
     match parser.cursor.peek() {
         Some(Token {
             kind: TokenKind::Newline,
@@ -427,9 +427,9 @@ fn parse_newline(parser: &mut Parser) -> NewParseResult {
     }
 }
 
-fn try_parsers<F>(parsers: Vec<F>, parser: &mut Parser) -> NewParseResult
+fn try_parsers<F>(parsers: Vec<F>, parser: &mut Parser) -> ParseResult
 where
-    F: Fn(&mut Parser) -> NewParseResult,
+    F: Fn(&mut Parser) -> ParseResult,
 {
     for pars in parsers {
         match pars(parser) {
@@ -442,7 +442,7 @@ where
     Ok(Parsed::Nothing)
 }
 
-pub fn parse_paragraph(parser: &mut Parser) -> NewParseResult {
+pub fn parse_paragraph(parser: &mut Parser) -> ParseResult {
     if is_heading(&parser.cursor) {
         return Ok(Parsed::Nothing);
     }
@@ -459,7 +459,7 @@ pub fn parse_paragraph(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-pub fn parse_inline_code(parser: &mut Parser) -> NewParseResult {
+pub fn parse_inline_code(parser: &mut Parser) -> ParseResult {
     parser.cursor.advance();
     let mut attrs = maybe_parse_attributes(&mut parser.cursor)?;
 
@@ -480,7 +480,7 @@ pub fn parse_inline_code(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-pub fn parse_inline_link(parser: &mut Parser) -> NewParseResult {
+pub fn parse_inline_link(parser: &mut Parser) -> ParseResult {
     parser.cursor.advance();
     let mut attrs = maybe_parse_attributes(&mut parser.cursor)?;
 
@@ -505,7 +505,7 @@ pub fn parse_inline_link(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-pub fn parse_inline(parser: &mut Parser) -> NewParseResult {
+pub fn parse_inline(parser: &mut Parser) -> ParseResult {
     if parser.cursor.peek_kind() != Some(TokenKind::At) {
         return Ok(Parsed::Nothing);
     }
@@ -563,7 +563,7 @@ pub fn parse_inline(parser: &mut Parser) -> NewParseResult {
     Ok(Parsed::Ok)
 }
 
-fn parse_inline_body(parser: &mut Parser) -> NewParseResult {
+fn parse_inline_body(parser: &mut Parser) -> ParseResult {
     while parser.cursor.peek_kind() != Some(TokenKind::CloseBrace) && !parser.is_at_end() {
         parse_inlines(parser)?;
     }
@@ -611,7 +611,7 @@ fn is_valid_simple_inline(kind: Option<TokenKind>) -> bool {
     )
 }
 
-pub fn parse_simple_inline(parser: &mut Parser) -> NewParseResult {
+pub fn parse_simple_inline(parser: &mut Parser) -> ParseResult {
     if parser.cursor.peek_kind() != Some(TokenKind::OpenCurly)
         && !is_valid_simple_inline(parser.cursor.peek_nth_kind(1))
     {
@@ -744,7 +744,7 @@ fn is_heading(cursor: &TokenCursor) -> bool {
     }
 }
 
-fn parse_heading(parser: &mut Parser) -> NewParseResult {
+fn parse_heading(parser: &mut Parser) -> ParseResult {
     debug_assert!(parser.cursor.peek_kind() == Some(TokenKind::Bang));
     parser.cursor.advance();
 
