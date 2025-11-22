@@ -4,272 +4,471 @@ expression: ast
 ---
 Document {
     body: [
-        Node {
-            node: Section(
-                [
-                    Node {
-                        node: Heading {
-                            level: 1,
-                            body: [
-                                Node {
-                                    node: Text(
-                                        "Header -- it",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "'",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        "s dashed",
-                                    ),
-                                    attributes: None,
-                                },
-                            ],
+        AstNode {
+            kind: Section,
+            attributes: AstAttributes(
+                Some(
+                    [
+                        Attribute {
+                            kind: Class,
+                            value: String(
+                                "important",
+                            ),
                         },
-                        attributes: Some(
-                            [
-                                Attribute {
-                                    kind: Attr(
-                                        "some",
-                                    ),
-                                    value: String(
-                                        "value",
-                                    ),
-                                },
-                                Attribute {
-                                    kind: Attr(
-                                        "other",
-                                    ),
-                                    value: String(
-                                        "value2",
-                                    ),
-                                },
-                            ],
-                        ),
-                    },
-                    Node {
-                        node: Paragraph(
-                            [
-                                Node {
-                                    node: Strong(
-                                        [
-                                            Node {
-                                                node: Text(
-                                                    "bold ",
-                                                ),
-                                                attributes: None,
-                                            },
-                                            Node {
-                                                node: Italic(
-                                                    [
-                                                        Node {
-                                                            node: Text(
-                                                                "italic",
-                                                            ),
-                                                            attributes: None,
-                                                        },
-                                                    ],
-                                                ),
-                                                attributes: None,
-                                            },
-                                        ],
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " and ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Link {
-                                        href: "https://www.eons.io",
-                                        body: [
-                                            Node {
-                                                node: Text(
-                                                    "eons.io",
-                                                ),
-                                                attributes: None,
-                                            },
-                                        ],
-                                    },
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Softbreak,
-                                    attributes: None,
-                                },
-                            ],
-                        ),
-                        attributes: None,
-                    },
-                ],
-            ),
-            attributes: Some(
-                [
-                    Attribute {
-                        kind: Class,
-                        value: String(
-                            "important",
-                        ),
-                    },
-                ],
-            ),
-        },
-        Node {
-            node: Named {
-                name: "warn",
-                body: [
-                    Node {
-                        node: Paragraph(
-                            [
-                                Node {
-                                    node: Italic(
-                                        [
-                                            Node {
-                                                node: Text(
-                                                    "Warning",
-                                                ),
-                                                attributes: None,
-                                            },
-                                        ],
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Softbreak,
-                                    attributes: None,
-                                },
-                            ],
-                        ),
-                        attributes: None,
-                    },
-                ],
-            },
-            attributes: None,
-        },
-        Node {
-            node: Code {
-                language: Some(
-                    "rust",
+                    ],
                 ),
-                body: "fn main() {\n  println!(\"Hello, world!\");\n}\n",
-            },
-            attributes: None,
-        },
-        Node {
-            node: Block(
-                [
-                    Node {
-                        node: Paragraph(
-                            [
-                                Node {
-                                    node: Text(
-                                        "With some ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Strong(
-                                        [
-                                            Node {
-                                                node: Text(
-                                                    "body",
-                                                ),
-                                                attributes: None,
-                                            },
-                                        ],
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " and ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Italic(
-                                        [
-                                            Node {
-                                                node: Text(
-                                                    "italic",
-                                                ),
-                                                attributes: None,
-                                            },
-                                        ],
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " content, and a ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Quoted(
-                                        Double,
-                                        [
-                                            Node {
-                                                node: Text(
-                                                    "quoted",
-                                                ),
-                                                attributes: None,
-                                            },
-                                        ],
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " ",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Quoted(
-                                        Single,
-                                        [
-                                            Node {
-                                                node: Text(
-                                                    "text",
-                                                ),
-                                                attributes: None,
-                                            },
-                                        ],
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        ", and <escaped>.",
-                                    ),
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Softbreak,
-                                    attributes: None,
-                                },
-                                Node {
-                                    node: Text(
-                                        " ",
-                                    ),
-                                    attributes: None,
-                                },
-                            ],
-                        ),
-                        attributes: None,
-                    },
-                ],
             ),
-            attributes: None,
+            tag: Start,
+        },
+        AstNode {
+            kind: Heading(
+                HeadingNode {
+                    level: 1,
+                },
+            ),
+            attributes: AstAttributes(
+                Some(
+                    [
+                        Attribute {
+                            kind: Attr(
+                                "some",
+                            ),
+                            value: String(
+                                "value",
+                            ),
+                        },
+                        Attribute {
+                            kind: Attr(
+                                "other",
+                            ),
+                            value: String(
+                                "value2",
+                            ),
+                        },
+                    ],
+                ),
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "Header -- it",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "'",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "s dashed",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Heading(
+                HeadingNode {
+                    level: 1,
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Paragraph,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Strong,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "bold ",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Italic,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "italic",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Italic,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Strong,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Text(
+                " and ",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Link(
+                LinkNode {
+                    href: "https://www.eons.io",
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "eons.io",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Link(
+                LinkNode {
+                    href: "",
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Softbreak,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Paragraph,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Section,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: NamedBlock(
+                NamedNode {
+                    name: "warn",
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Paragraph,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Italic,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "Warning",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Italic,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Softbreak,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Paragraph,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: NamedBlock(
+                NamedNode {
+                    name: "warn",
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: CodeBlock(
+                CodeNode {
+                    language: Some(
+                        "rust",
+                    ),
+                    body: "fn main() {\n  println!(\"Hello, world!\");\n}\n",
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Block,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Paragraph,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "With some ",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Strong,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "body",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Strong,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Text(
+                " and ",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Italic,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "italic",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Italic,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Text(
+                " content, and a ",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Quoted(
+                QuotedNode {
+                    quote: Double,
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "quoted",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Quoted(
+                QuotedNode {
+                    quote: Double,
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Text(
+                " ",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Quoted(
+                QuotedNode {
+                    quote: Single,
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Text(
+                "text",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Quoted(
+                QuotedNode {
+                    quote: Single,
+                },
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Text(
+                ", and <escaped>.",
+            ),
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Softbreak,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: Start,
+        },
+        AstNode {
+            kind: Paragraph,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
+        },
+        AstNode {
+            kind: Block,
+            attributes: AstAttributes(
+                None,
+            ),
+            tag: End,
         },
     ],
 }

@@ -16,6 +16,7 @@ toml = { version = "~0.9", default-features = false, features = ["std", "serde",
 
 [dev-dependencies]
 insta = "1.43.2"
+pretty_assertions = "1.4.1"
 
 [features]
 # default = ["serde"]

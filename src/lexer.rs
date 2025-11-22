@@ -21,7 +21,7 @@ pub enum TokenKind {
     Comma,
     Dot,
     DoubleQuote,
-    SingleQoute,
+    SingleQuote,
     Text,
     Newline,
     Whitespace,
@@ -97,7 +97,7 @@ impl<'a> CharCursor<'a> {
             '%' => TokenKind::Percent,
             '#' => TokenKind::Hashbang,
             '"' => TokenKind::DoubleQuote,
-            '\'' => TokenKind::SingleQoute,
+            '\'' => TokenKind::SingleQuote,
             _ => self.text(),
         };
 

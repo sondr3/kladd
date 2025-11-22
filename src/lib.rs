@@ -2,7 +2,7 @@
 use serde::de::DeserializeOwned;
 
 use crate::{
-    ast::{Blocks, Document},
+    ast::{AstNode, Document},
     error::KladdError,
     lexer::tokenize,
     parser::{parse, parse_simple},
@@ -34,7 +34,7 @@ where
     Ok(res)
 }
 
-pub fn parse_kladd(input: &str) -> Result<Blocks, KladdError> {
+pub fn parse_kladd(input: &str) -> Result<Vec<AstNode>, KladdError> {
     let tokens = tokenize(input);
     Ok(parse_simple(tokens)?)
 }
@@ -44,16 +44,17 @@ pub mod test_utils;
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "serde")]
+    use serde::Deserialize;
+
     use crate::{
-        ast_visualizer::{visualize_blocks, visualize_document},
+        ast_visualizer::{visualize_document, visualize_nodes},
         html::{HtmlOptions, to_html_with_options},
         lexer::tokenize,
         parse_kladd,
         parser::parse,
         test_utils::TEST_INPUT,
     };
-    #[cfg(feature = "serde")]
-    use serde::Deserialize;
 
     #[cfg_attr(feature = "serde", derive(Deserialize))]
     #[cfg(feature = "serde")]
@@ -81,7 +82,7 @@ mod tests {
         let vizualised = visualize_document(&ast);
         insta::assert_snapshot!("visualize", vizualised);
 
-        let html = to_html_with_options(&ast, HtmlOptions::default());
+        let html = to_html_with_options(&ast, HtmlOptions::default()).unwrap();
         insta::assert_snapshot!("html", html);
     }
 
@@ -93,7 +94,7 @@ This is some {*simple*} input without metadata.
 It goes @italic[across] multiple paragraphs"#;
 
         let ast = parse_kladd(input).unwrap();
-        let vizualised = visualize_blocks(ast);
+        let vizualised = visualize_nodes(&ast);
         insta::assert_snapshot!(vizualised);
     }
 }

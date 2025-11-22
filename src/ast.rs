@@ -1,8 +1,8 @@
-use crate::lexer::TokenKind;
+use crate::{ast_visualizer::Visualizer, lexer::TokenKind};
 
 #[derive(Debug)]
 pub struct Document {
-    pub body: Blocks,
+    pub body: Vec<AstNode>,
     // pub references: HashMap<String, String>,
     // pub footnotes: HashMap<String, String>,
 }
@@ -72,7 +72,7 @@ impl AttributeKind {
         }
     }
 
-    pub fn write_ast(&self, buf: &mut String) {
+    pub(crate) fn write_ast(&self, buf: &mut Visualizer) {
         match self {
             AttributeKind::Class => buf.push_str("class"),
             AttributeKind::Id => buf.push_str("id"),
@@ -108,112 +108,163 @@ impl Attribute {
 
 pub type Attributes = Vec<Attribute>;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Node<T> {
-    pub node: T,
-    pub attributes: Option<Attributes>,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NodeKind {
+    Heading(HeadingNode),
+    Paragraph,
+    Block,
+    Section,
+    NamedBlock(NamedNode),
+    CodeBlock(CodeNode),
+    Text(String),
+    Strong,
+    Italic,
+    Underline,
+    Highlight,
+    Strikethrough,
+    Superscript,
+    Subscript,
+    Naked,
+    Quoted(QuotedNode),
+    Code(CodeNode),
+    Link(LinkNode),
+    Custom(NamedNode),
+    Softbreak,
 }
 
-impl<T> Node<T> {
-    pub fn new(node: T, attributes: Option<Attributes>) -> Self {
-        Node { node, attributes }
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct HeadingNode {
+    pub level: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CodeNode {
+    pub language: Option<String>,
+    pub body: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NamedNode {
+    pub name: String,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct QuotedNode {
+    pub quote: Quote,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LinkNode {
+    pub href: String,
+}
+
+impl NodeKind {
+    pub fn is_block(&self) -> bool {
+        matches!(
+            *self,
+            NodeKind::Heading(..)
+                | NodeKind::Paragraph
+                | NodeKind::Block
+                | NodeKind::Section
+                | NodeKind::NamedBlock(..)
+                | NodeKind::CodeBlock(..)
+        )
     }
 
-    pub fn from_node(node: T) -> Self {
-        Node {
-            node,
-            attributes: None,
+    pub fn text(&self) -> Option<&str> {
+        match self {
+            NodeKind::Text(text) => Some(text),
+            _ => None,
+        }
+    }
+
+    pub fn from_simple_inline(kind: TokenKind) -> Self {
+        match kind {
+            TokenKind::ForwardSlash => NodeKind::Italic,
+            TokenKind::Star => NodeKind::Strong,
+            TokenKind::Underscore => NodeKind::Underline,
+            TokenKind::Equals => NodeKind::Highlight,
+            TokenKind::Tilde => NodeKind::Strikethrough,
+            TokenKind::SingleQuote => NodeKind::Quoted(QuotedNode {
+                quote: Quote::Single,
+            }),
+            _ => panic!("invalid kind {:?} for simple inline", kind),
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct NodeBuilder<T> {
-    node: Option<T>,
-    attributes: Option<Attributes>,
-}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AstAttributes(Option<Vec<Attribute>>);
 
-impl<T> Default for NodeBuilder<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T> NodeBuilder<T> {
-    pub fn new() -> Self {
-        NodeBuilder {
-            node: None,
-            attributes: None,
-        }
+impl AstAttributes {
+    pub fn new(attrs: Attributes) -> Self {
+        Self(Some(attrs))
     }
 
-    pub fn with_node(&mut self, node: T) -> &mut Self {
-        self.node = Some(node);
-        self
+    pub fn empty() -> Self {
+        Self(None)
     }
 
-    pub fn with_attributes(&mut self, attrs: Attributes) -> &mut Self {
-        self.attributes = Some(attrs);
-        self
+    pub fn inner(&self) -> Option<&Vec<Attribute>> {
+        self.0.as_ref()
     }
 
-    pub fn pop_attribute(
-        &mut self,
-        predicate: impl FnOnce(&mut Attribute) -> bool,
-    ) -> Option<Attribute> {
-        if let Some(attrs) = &mut self.attributes {
-            let res = attrs.pop_if(predicate);
-            if self.attributes.as_ref().is_some_and(|v| v.is_empty()) {
-                self.attributes = None;
+    pub fn pop_if(&mut self, pred: impl FnOnce(&mut Attribute) -> bool) -> Option<AttributeValue> {
+        match self.0.as_mut() {
+            Some(attrs) => {
+                // TODO: fix this
+                let value = attrs.pop_if(pred).map(|i| i.value);
+                if attrs.is_empty() {
+                    self.0 = None;
+                }
+
+                value
             }
-            return res;
-        }
-
-        None
-    }
-
-    pub fn has_attributes(&self) -> bool {
-        self.attributes.is_some()
-    }
-
-    pub fn has_attribute_by_kind(&self, needle: AttributeKind) -> bool {
-        self.attributes
-            .as_ref()
-            .is_some_and(|a| a.iter().any(|i| i.kind == needle))
-    }
-
-    pub fn build(self) -> Node<T> {
-        assert!(self.node.is_some());
-        Node {
-            node: self.node.unwrap(),
-            attributes: self.attributes,
+            None => None,
         }
     }
 }
 
-pub type BlockNode = Node<Block>;
-pub type Blocks = Vec<BlockNode>;
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Block {
-    Heading {
-        level: u8,
-        body: Inlines,
-    },
-    Paragraph(Inlines),
-    Block(Blocks),
-    Section(Blocks),
-    Named {
-        name: String,
-        body: Blocks,
-    },
-    Code {
-        language: Option<String>,
-        body: String,
-    },
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NodeTag {
+    Start,
+    End,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AstNode {
+    pub kind: NodeKind,
+    pub attributes: AstAttributes,
+    pub tag: NodeTag,
+}
+
+impl AstNode {
+    pub fn start(kind: NodeKind) -> Self {
+        AstNode {
+            kind,
+            attributes: AstAttributes::empty(),
+            tag: NodeTag::Start,
+        }
+    }
+
+    pub fn start_attrs(kind: NodeKind, attributes: AstAttributes) -> Self {
+        AstNode {
+            kind,
+            attributes,
+            tag: NodeTag::Start,
+        }
+    }
+
+    pub fn end(kind: NodeKind) -> Self {
+        AstNode {
+            kind,
+            attributes: AstAttributes::empty(),
+            tag: NodeTag::End,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Quote {
     Single,
     Double,
@@ -223,73 +274,8 @@ impl From<TokenKind> for Quote {
     fn from(value: TokenKind) -> Self {
         match value {
             TokenKind::DoubleQuote => Quote::Double,
-            TokenKind::SingleQoute => Quote::Single,
+            TokenKind::SingleQuote => Quote::Single,
             _ => panic!("attempting to convert {:?} into quote", value),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum InlineKind {
-    Strong,
-    Italic,
-    Underline,
-    Highlight,
-    Strikethrough,
-    Superscript,
-    Subscript,
-    Naked,
-    Code,
-    Link,
-    SingleQuote,
-    Custom(String),
-}
-
-pub type InlineNode = Node<Inline>;
-pub type Inlines = Vec<InlineNode>;
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Inline {
-    Text(String),
-    Strong(Inlines),
-    Italic(Inlines),
-    Underline(Inlines),
-    Highlight(Inlines),
-    Strikethrough(Inlines),
-    Superscript(Inlines),
-    Subscript(Inlines),
-    Naked(Inlines),
-    Quoted(Quote, Inlines),
-    Code {
-        language: Option<String>,
-        body: String,
-    },
-    Link {
-        href: String,
-        body: Inlines,
-    },
-    Custom {
-        name: String,
-        body: Inlines,
-    },
-    Softbreak,
-}
-
-impl Inline {
-    pub fn from_kind(kind: InlineKind, body: Inlines) -> Self {
-        match kind {
-            InlineKind::Strong => Inline::Strong(body),
-            InlineKind::Italic => Inline::Italic(body),
-            InlineKind::Underline => Inline::Underline(body),
-            InlineKind::Highlight => Inline::Highlight(body),
-            InlineKind::Strikethrough => Inline::Strikethrough(body),
-            InlineKind::Superscript => Inline::Superscript(body),
-            InlineKind::Subscript => Inline::Subscript(body),
-            InlineKind::Naked => Inline::Naked(body),
-            InlineKind::SingleQuote => Inline::Quoted(Quote::Single, body),
-            InlineKind::Custom(ident) => Inline::Custom { name: ident, body },
-            InlineKind::Link => panic!("cannot construct a @link from this method"),
-            InlineKind::Code => panic!("cannot construct a @code from this method"),
         }
     }
 }

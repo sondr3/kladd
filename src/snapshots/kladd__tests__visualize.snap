@@ -36,5 +36,3 @@ doc
     single_quoted
       str text = "text"
     str text = ", and <escaped>."
-    softbreak
-    str text = " "

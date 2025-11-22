@@ -1,6 +1,9 @@
 use std::{error::Error, fmt::Display};
 
-use crate::{ast::AttributeKind, lexer::TokenKind};
+use crate::{
+    ast::{AttributeKind, NodeKind},
+    lexer::TokenKind,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParsingError {
@@ -81,14 +84,39 @@ impl From<toml::de::Error> for ParsingError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HtmlRenderError {
+    InvalidNode(NodeKind, &'static str),
+}
+
+impl From<HtmlRenderError> for KladdError {
+    fn from(value: HtmlRenderError) -> Self {
+        KladdError::HtmlRenderError(value)
+    }
+}
+
+impl Display for HtmlRenderError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidNode(node, name) => {
+                write!(f, "found unexpected node {:?} in {}", node, name)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KladdError {
     ParsingError(ParsingError),
+    HtmlRenderError(HtmlRenderError),
 }
 
 impl Display for KladdError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             KladdError::ParsingError(e) => write!(f, "{}", e),
+            KladdError::HtmlRenderError(e) => {
+                write!(f, "{}", e)
+            }
         }
     }
 }

@@ -172,7 +172,7 @@ expression: tokens
         lexeme: "it",
     },
     Token {
-        kind: SingleQoute,
+        kind: SingleQuote,
         lexeme: "'",
     },
     Token {
@@ -604,7 +604,7 @@ expression: tokens
         lexeme: "{",
     },
     Token {
-        kind: SingleQoute,
+        kind: SingleQuote,
         lexeme: "'",
     },
     Token {
@@ -612,7 +612,7 @@ expression: tokens
         lexeme: "text",
     },
     Token {
-        kind: SingleQoute,
+        kind: SingleQuote,
         lexeme: "'",
     },
     Token {
@@ -646,10 +646,6 @@ expression: tokens
     Token {
         kind: Newline,
         lexeme: "\n",
-    },
-    Token {
-        kind: Whitespace,
-        lexeme: " ",
     },
     Token {
         kind: Eof,
