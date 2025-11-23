@@ -63,19 +63,17 @@ It goes @italic[across] multiple paragraphs"#;
     #[test]
     fn test_document_iter() {
         let input = r"This is not {*bold*}";
-        let (ast, _) = Parser::<()>::new(input).unwrap().finish();
-        let ast = ast
-            .iter()
-            .cloned()
-            .map(|n| match n.kind {
+        let (mut ast, _) = Parser::<()>::new(input).unwrap().finish();
+        for n in ast.iter_mut() {
+            match n.kind {
                 NodeKind::Strong if n.tag == NodeTag::Start => {
-                    AstNode::start_attrs(NodeKind::Underline, n.attributes)
+                    *n = AstNode::start_attrs(NodeKind::Underline, n.attributes.clone());
                 }
-                _ => n,
-            })
-            .collect::<Vec<_>>();
+                _ => {}
+            }
+        }
 
-        let vizualised = visualize_nodes(&ast);
+        let vizualised = visualize_nodes(&ast.body);
         insta::assert_snapshot!(vizualised);
     }
 }
