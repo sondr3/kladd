@@ -2,7 +2,7 @@ use crate::{ast_visualizer::Visualizer, lexer::TokenKind};
 
 #[derive(Debug)]
 pub struct Document {
-    pub body: Vec<AstNode>,
+    pub(crate) body: Vec<AstNode>,
     // pub references: HashMap<String, String>,
     // pub footnotes: HashMap<String, String>,
 }

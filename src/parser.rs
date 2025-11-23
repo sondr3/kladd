@@ -48,13 +48,13 @@ pub fn parse_inner(input: Vec<Token>) -> Result<(Document, Option<String>), Pars
     };
 
     parser.parse()?;
-    Ok((Document { body: parser.nodes }, metadata))
+    Ok((parser.document, metadata))
 }
 
 pub fn parse_simple(input: Vec<Token>) -> Result<Vec<AstNode>, ParsingError> {
     let mut parser = Parser::new(input);
     parser.parse()?;
-    Ok(parser.nodes)
+    Ok(parser.document.body)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -71,14 +71,14 @@ type ParseResult = Result<Parsed, ParsingError>;
 
 #[derive(Debug)]
 pub(crate) struct Parser<'a> {
-    pub(crate) nodes: Vec<AstNode>,
+    pub(crate) document: Document,
     pub(crate) cursor: TokenCursor<'a>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(input: Vec<Token<'a>>) -> Self {
         Parser {
-            nodes: Vec::new(),
+            document: Document::new(),
             cursor: TokenCursor::new(input),
         }
     }
@@ -94,15 +94,15 @@ impl<'a> Parser<'a> {
     }
 
     fn start(&mut self, node: NodeKind) {
-        self.nodes.push(AstNode::start(node));
+        self.document.body.push(AstNode::start(node));
     }
 
     fn end(&mut self, node: NodeKind) {
-        self.nodes.push(AstNode::end(node));
+        self.document.body.push(AstNode::end(node));
     }
 
     fn start_with_attrs(&mut self, node: NodeKind, attrs: AstAttributes) {
-        self.nodes.push(AstNode::start_attrs(node, attrs));
+        self.document.body.push(AstNode::start_attrs(node, attrs));
     }
 
     pub fn parse(&mut self) -> ParseResult {
@@ -804,7 +804,7 @@ mod tests {
 
         assert!(parser.is_at_end());
         assert_eq!(
-            parser.nodes,
+            parser.document.body,
             vec![
                 AstNode::start(NodeKind::Strong),
                 AstNode::start(NodeKind::Text("body".to_owned())),
@@ -858,7 +858,7 @@ mod tests {
             parse_inline(&mut parser).unwrap();
 
             assert!(parser.is_at_end());
-            assert_eq!(parser.nodes, expected);
+            assert_eq!(parser.document.body, expected);
         }
     }
 
@@ -870,7 +870,7 @@ mod tests {
 
         assert!(parser.is_at_end());
         assert_eq!(
-            parser.nodes,
+            parser.document.body,
             vec![
                 AstNode::start(NodeKind::Strong),
                 AstNode::start(NodeKind::Text("bold ".to_owned())),
@@ -887,7 +887,7 @@ mod tests {
 
         assert!(parser.is_at_end());
         assert_eq!(
-            parser.nodes,
+            parser.document.body,
             vec![
                 AstNode::start(NodeKind::Strong),
                 AstNode::start(NodeKind::Text("bold ".to_owned())),
@@ -939,7 +939,7 @@ mod tests {
             parse_heading(&mut parser).unwrap();
 
             assert!(parser.is_at_end());
-            assert_eq!(parser.nodes, expected);
+            assert_eq!(parser.document.body, expected);
         }
     }
 
@@ -968,7 +968,7 @@ mod tests {
             parse_inline(&mut parser).unwrap();
 
             assert!(parser.is_at_end());
-            assert_eq!(parser.nodes, expected);
+            assert_eq!(parser.document.body, expected);
         }
     }
 
@@ -986,7 +986,7 @@ fn main() {
 
         assert!(parser.is_at_end());
         assert_eq!(
-            parser.nodes,
+            parser.document.body,
             vec![AstNode::start(NodeKind::CodeBlock(CodeNode {
                 language: Some("rust".to_owned()),
                 body: r#"fn main() {
@@ -1035,7 +1035,7 @@ fn main() {
             parse_inline(&mut parser).unwrap();
 
             assert!(parser.is_at_end());
-            assert_eq!(parser.nodes, expected);
+            assert_eq!(parser.document.body, expected);
         }
     }
 
@@ -1100,7 +1100,7 @@ fn main() {
             parse_paragraph(&mut parser).unwrap();
 
             assert!(parser.is_at_end());
-            assert_eq!(parser.nodes, expected);
+            assert_eq!(parser.document.body, expected);
         }
     }
 
