@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, btree_map::Keys};
 
-use crate::{ast_visualizer::Visualizer, lexer::TokenKind};
+use crate::lexer::TokenKind;
 
 #[derive(Debug)]
 pub struct Document {
@@ -55,33 +55,6 @@ pub enum AttributeKind {
     /// A `href` attribute
     Href,
     Attr(String),
-}
-
-impl AttributeKind {
-    pub fn write_html(&self, buf: &mut String) {
-        match self {
-            AttributeKind::Class => buf.push_str("class"),
-            AttributeKind::Id => buf.push_str("id"),
-            AttributeKind::Href => buf.push_str("href"),
-            AttributeKind::Attr(v) => match v.as_str() {
-                "alt" | "background" | "checked" | "dir" | "disabled" | "hidden" | "style"
-                | "title" => buf.push_str(v),
-                _ => {
-                    buf.push_str("data-");
-                    buf.push_str(v);
-                }
-            },
-        }
-    }
-
-    pub(crate) fn write_ast(&self, buf: &mut Visualizer) {
-        match self {
-            AttributeKind::Class => buf.push_str("class"),
-            AttributeKind::Id => buf.push_str("id"),
-            AttributeKind::Href => buf.push_str("href"),
-            AttributeKind::Attr(v) => buf.push_str(v),
-        }
-    }
 }
 
 #[cfg(any(debug_assertions, test))]
@@ -190,25 +163,6 @@ pub struct LinkNode {
 }
 
 impl NodeKind {
-    pub fn is_block(&self) -> bool {
-        matches!(
-            *self,
-            NodeKind::Heading(..)
-                | NodeKind::Paragraph
-                | NodeKind::Block
-                | NodeKind::Section
-                | NodeKind::NamedBlock(..)
-                | NodeKind::CodeBlock(..)
-        )
-    }
-
-    pub fn text(&self) -> Option<&str> {
-        match self {
-            NodeKind::Text(text) => Some(text),
-            _ => None,
-        }
-    }
-
     pub fn from_simple_inline(kind: TokenKind) -> Self {
         match kind {
             TokenKind::ForwardSlash => NodeKind::Italic,

@@ -61,7 +61,13 @@ pub fn visualize_nodes(nodes: &[AstNode]) -> String {
 
 fn write_attribute((kind, value): (&AttributeKind, &AttributeValue), vis: &mut Visualizer) {
     vis.push(' ');
-    kind.write_ast(vis);
+
+    match kind {
+        AttributeKind::Class => vis.push_str("class"),
+        AttributeKind::Id => vis.push_str("id"),
+        AttributeKind::Href => vis.push_str("href"),
+        AttributeKind::Attr(v) => vis.push_str(v),
+    }
     vis.push('=');
     match value {
         AttributeValue::String(v) => vis.push_str(v),

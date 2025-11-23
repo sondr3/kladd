@@ -59,7 +59,20 @@ fn level_to_heading(level: u8) -> &'static str {
 
 fn write_attribute((kind, value): (&AttributeKind, &AttributeValue), buf: &mut String) {
     buf.push(' ');
-    kind.write_html(buf);
+
+    match kind {
+        AttributeKind::Class => buf.push_str("class"),
+        AttributeKind::Id => buf.push_str("id"),
+        AttributeKind::Href => buf.push_str("href"),
+        AttributeKind::Attr(v) => match v.as_str() {
+            "alt" | "background" | "checked" | "dir" | "disabled" | "hidden" | "style"
+            | "title" => buf.push_str(v),
+            _ => {
+                buf.push_str("data-");
+                buf.push_str(v);
+            }
+        },
+    }
 
     match value {
         AttributeValue::String(v) => {
