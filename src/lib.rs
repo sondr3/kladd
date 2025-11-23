@@ -1,34 +1,11 @@
-use serde::de::DeserializeOwned;
-
-use crate::{
-    ast::{AstNode, Document},
-    error::KladdError,
-    lexer::tokenize,
-    parser::{parse, parse_simple},
-};
-
 pub mod ast;
 pub mod ast_visualizer;
 mod char_cursor;
 pub mod error;
 pub mod html;
 mod lexer;
-mod parser;
+pub mod parser;
 mod token_cursor;
-
-pub fn parse_kladd_document<T>(input: &str) -> Result<(Document, Option<T>), KladdError>
-where
-    T: DeserializeOwned,
-{
-    let tokens = tokenize(input);
-    let res = parse(tokens)?;
-    Ok(res)
-}
-
-pub fn parse_kladd(input: &str) -> Result<Vec<AstNode>, KladdError> {
-    let tokens = tokenize(input);
-    Ok(parse_simple(tokens)?)
-}
 
 #[cfg(test)]
 pub mod test_utils;
@@ -41,8 +18,7 @@ mod tests {
         ast_visualizer::{visualize_document, visualize_nodes},
         html::{HtmlOptions, to_html_with_options},
         lexer::tokenize,
-        parse_kladd,
-        parser::parse,
+        parser::Parser,
         test_utils::TEST_INPUT,
     };
 
@@ -56,15 +32,18 @@ mod tests {
         let tokens = tokenize(TEST_INPUT);
         assert!(!tokens.is_empty());
         insta::assert_debug_snapshot!("tokenizer", tokens);
-        let (ast, meta) = parse::<Metadata>(tokens).unwrap();
-        assert_eq!(meta.unwrap().metadata, "things".to_owned());
 
-        insta::assert_debug_snapshot!("ast", ast);
+        let parser = Parser::<Metadata>::new(TEST_INPUT).unwrap();
+        let (doc, metadata) = parser.finish();
 
-        let vizualised = visualize_document(&ast);
+        assert_eq!(metadata.unwrap().metadata, "things".to_owned());
+
+        insta::assert_debug_snapshot!("ast", doc);
+
+        let vizualised = visualize_document(&doc);
         insta::assert_snapshot!("visualize", vizualised);
 
-        let html = to_html_with_options(&ast, HtmlOptions::default()).unwrap();
+        let html = to_html_with_options(&doc, HtmlOptions::default()).unwrap();
         insta::assert_snapshot!("html", html);
     }
 
@@ -75,8 +54,8 @@ This is some {*simple*} input without metadata.
 
 It goes @italic[across] multiple paragraphs"#;
 
-        let ast = parse_kladd(input).unwrap();
-        let vizualised = visualize_nodes(&ast);
+        let (ast, _) = Parser::<()>::new(input).unwrap().finish();
+        let vizualised = visualize_nodes(&ast.body);
         insta::assert_snapshot!(vizualised);
     }
 }
