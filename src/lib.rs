@@ -15,6 +15,7 @@ mod tests {
     use serde::Deserialize;
 
     use crate::{
+        ast::{AstNode, NodeKind, NodeTag},
         ast_visualizer::{visualize_document, visualize_nodes},
         html::{HtmlOptions, to_html_with_options},
         lexer::tokenize,
@@ -56,6 +57,25 @@ It goes @italic[across] multiple paragraphs"#;
 
         let (ast, _) = Parser::<()>::new(input).unwrap().finish();
         let vizualised = visualize_nodes(&ast.body);
+        insta::assert_snapshot!(vizualised);
+    }
+
+    #[test]
+    fn test_document_iter() {
+        let input = r"This is not {*bold*}";
+        let (ast, _) = Parser::<()>::new(input).unwrap().finish();
+        let ast = ast
+            .iter()
+            .cloned()
+            .map(|n| match n.kind {
+                NodeKind::Strong if n.tag == NodeTag::Start => {
+                    AstNode::start_attrs(NodeKind::Underline, n.attributes)
+                }
+                _ => n,
+            })
+            .collect::<Vec<_>>();
+
+        let vizualised = visualize_nodes(&ast);
         insta::assert_snapshot!(vizualised);
     }
 }

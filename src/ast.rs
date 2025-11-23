@@ -19,6 +19,14 @@ impl Document {
     pub fn new() -> Self {
         Document { body: Vec::new() }
     }
+
+    pub fn iter<'a>(&'a self) -> std::slice::Iter<'a, AstNode> {
+        self.body.iter()
+    }
+
+    pub fn iter_mut<'a>(&'a mut self) -> std::slice::IterMut<'a, AstNode> {
+        self.body.iter_mut()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
