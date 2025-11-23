@@ -13,7 +13,6 @@ pub enum ParsingError {
     MissingAttribute(&'static str, &'static str),
     InvalidHeading(String),
     MissingBlockEnd(String),
-    #[cfg(feature = "serde")]
     MetadataDeserializationFailed(String),
 }
 
@@ -49,7 +48,6 @@ impl Display for ParsingError {
             ParsingError::MissingBlockEnd(name) => {
                 write!(f, "did not reach the end of {} block", name)
             }
-            #[cfg(feature = "serde")]
             ParsingError::MetadataDeserializationFailed(inner) => {
                 write!(
                     f,
@@ -69,7 +67,6 @@ impl From<ParsingError> for KladdError {
     }
 }
 
-#[cfg(feature = "serde")]
 impl From<toml::de::Error> for ParsingError {
     fn from(value: toml::de::Error) -> Self {
         ParsingError::MetadataDeserializationFailed(value.to_string())

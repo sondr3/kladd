@@ -1,4 +1,3 @@
-#[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -17,14 +16,6 @@ mod lexer;
 mod parser;
 mod token_cursor;
 
-#[cfg(not(feature = "serde"))]
-pub fn parse_kladd_document(input: &str) -> Result<(Document, Option<String>), KladdError> {
-    let tokens = tokenize(input);
-    let res = parse(tokens)?;
-    Ok(res)
-}
-
-#[cfg(feature = "serde")]
 pub fn parse_kladd_document<T>(input: &str) -> Result<(Document, Option<T>), KladdError>
 where
     T: DeserializeOwned,
@@ -44,7 +35,6 @@ pub mod test_utils;
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "serde")]
     use serde::Deserialize;
 
     use crate::{
@@ -56,8 +46,7 @@ mod tests {
         test_utils::TEST_INPUT,
     };
 
-    #[cfg_attr(feature = "serde", derive(Deserialize))]
-    #[cfg(feature = "serde")]
+    #[derive(Deserialize)]
     struct Metadata {
         metadata: String,
     }
@@ -67,14 +56,7 @@ mod tests {
         let tokens = tokenize(TEST_INPUT);
         assert!(!tokens.is_empty());
         insta::assert_debug_snapshot!("tokenizer", tokens);
-
-        #[cfg(not(feature = "serde"))]
-        let (ast, _) = parse(tokens).unwrap();
-
-        #[cfg(feature = "serde")]
         let (ast, meta) = parse::<Metadata>(tokens).unwrap();
-
-        #[cfg(feature = "serde")]
         assert_eq!(meta.unwrap().metadata, "things".to_owned());
 
         insta::assert_debug_snapshot!("ast", ast);

@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 
-#[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -13,12 +12,6 @@ use crate::{
     token_cursor::TokenCursor,
 };
 
-#[cfg(not(feature = "serde"))]
-pub fn parse(input: Vec<Token>) -> Result<(Document, Option<String>), ParsingError> {
-    parse_inner(input)
-}
-
-#[cfg(feature = "serde")]
 pub fn parse<T>(input: Vec<Token>) -> Result<(Document, Option<T>), ParsingError>
 where
     T: DeserializeOwned,
