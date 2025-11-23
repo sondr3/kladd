@@ -1,3 +1,5 @@
+use std::collections::{BTreeMap, btree_map::Keys};
+
 use crate::{ast_visualizer::Visualizer, lexer::TokenKind};
 
 #[derive(Debug)]
@@ -44,7 +46,7 @@ impl AttributeValue {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum AttributeKind {
     /// A `.class` attribute
     Class,
@@ -94,19 +96,48 @@ impl From<&str> for AttributeKind {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Attribute {
-    pub kind: AttributeKind,
-    pub value: AttributeValue,
-}
+pub type Attributes = BTreeMap<AttributeKind, AttributeValue>;
 
-impl Attribute {
-    pub fn new(kind: AttributeKind, value: AttributeValue) -> Self {
-        Attribute { kind, value }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AstAttributes(Option<Attributes>);
+
+impl<const N: usize> From<[(AttributeKind, AttributeValue); N]> for AstAttributes {
+    fn from(value: [(AttributeKind, AttributeValue); N]) -> Self {
+        AstAttributes::new(BTreeMap::from(value))
     }
 }
 
-pub type Attributes = Vec<Attribute>;
+impl AstAttributes {
+    pub fn new(attrs: Attributes) -> Self {
+        Self(Some(attrs))
+    }
+
+    pub fn empty() -> Self {
+        Self(None)
+    }
+
+    pub fn inner(&self) -> Option<&Attributes> {
+        self.0.as_ref()
+    }
+
+    pub fn keys(&self) -> Keys<'_, AttributeKind, AttributeValue> {
+        self.0.as_ref().map(|a| a.keys()).unwrap_or_default()
+    }
+
+    pub fn remove(&mut self, needle: AttributeKind) -> Option<AttributeValue> {
+        match self.0.as_mut() {
+            Some(attrs) => {
+                let value = attrs.remove(&needle);
+                if attrs.is_empty() {
+                    self.0 = None;
+                }
+
+                value
+            }
+            None => None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeKind {
@@ -189,38 +220,6 @@ impl NodeKind {
                 quote: Quote::Single,
             }),
             _ => panic!("invalid kind {:?} for simple inline", kind),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AstAttributes(Option<Vec<Attribute>>);
-
-impl AstAttributes {
-    pub fn new(attrs: Attributes) -> Self {
-        Self(Some(attrs))
-    }
-
-    pub fn empty() -> Self {
-        Self(None)
-    }
-
-    pub fn inner(&self) -> Option<&Vec<Attribute>> {
-        self.0.as_ref()
-    }
-
-    pub fn pop_if(&mut self, pred: impl FnOnce(&mut Attribute) -> bool) -> Option<AttributeValue> {
-        match self.0.as_mut() {
-            Some(attrs) => {
-                // TODO: fix this
-                let value = attrs.pop_if(pred).map(|i| i.value);
-                if attrs.is_empty() {
-                    self.0 = None;
-                }
-
-                value
-            }
-            None => None,
         }
     }
 }

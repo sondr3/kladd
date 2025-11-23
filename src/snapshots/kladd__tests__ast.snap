@@ -8,14 +8,11 @@ Document {
             kind: Section,
             attributes: AstAttributes(
                 Some(
-                    [
-                        Attribute {
-                            kind: Class,
-                            value: String(
-                                "important",
-                            ),
-                        },
-                    ],
+                    {
+                        Class: String(
+                            "important",
+                        ),
+                    },
                 ),
             ),
             tag: Start,
@@ -28,24 +25,18 @@ Document {
             ),
             attributes: AstAttributes(
                 Some(
-                    [
-                        Attribute {
-                            kind: Attr(
-                                "some",
-                            ),
-                            value: String(
-                                "value",
-                            ),
-                        },
-                        Attribute {
-                            kind: Attr(
-                                "other",
-                            ),
-                            value: String(
-                                "value2",
-                            ),
-                        },
-                    ],
+                    {
+                        Attr(
+                            "other",
+                        ): String(
+                            "value2",
+                        ),
+                        Attr(
+                            "some",
+                        ): String(
+                            "value",
+                        ),
+                    },
                 ),
             ),
             tag: Start,

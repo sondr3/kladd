@@ -2,8 +2,8 @@ use htmlize::{escape_attribute, escape_text};
 
 use crate::{
     ast::{
-        AstNode, Attribute, AttributeKind, AttributeValue, Attributes, CodeNode, Document,
-        HeadingNode, LinkNode, NamedNode, NodeKind, NodeTag, Quote, QuotedNode,
+        AstNode, AttributeKind, AttributeValue, Attributes, CodeNode, Document, HeadingNode,
+        LinkNode, NamedNode, NodeKind, NodeTag, Quote, QuotedNode,
     },
     error::{HtmlRenderError, KladdError},
 };
@@ -57,11 +57,11 @@ fn level_to_heading(level: u8) -> &'static str {
     }
 }
 
-fn write_attribute(attr: &Attribute, buf: &mut String) {
+fn write_attribute((kind, value): (&AttributeKind, &AttributeValue), buf: &mut String) {
     buf.push(' ');
-    attr.kind.write_html(buf);
+    kind.write_html(buf);
 
-    match &attr.value {
+    match value {
         AttributeValue::String(v) => {
             buf.push('=');
             buf.push('"');
@@ -125,25 +125,24 @@ fn htmlify_node(node: &AstNode, options: Option<HtmlOptions>, buf: &mut String) 
 
             let mut class_seen = false;
             if let Some(attrs) = &node.attributes.inner() {
-                for attr in attrs.iter() {
-                    if attr.kind == AttributeKind::Class {
+                for (kind, value) in attrs.iter() {
+                    if *kind == AttributeKind::Class {
                         class_seen = true;
-                        let attr = dbg!(Attribute::new(
-                            AttributeKind::Class,
-                            attr.value.concat(AttributeValue::String(name.to_owned())),
-                        ));
-                        write_attribute(&attr, buf);
+                        write_attribute(
+                            (kind, &value.concat(AttributeValue::String(name.to_owned()))),
+                            buf,
+                        );
                     }
 
-                    write_attribute(attr, buf);
+                    write_attribute((kind, value), buf);
                 }
             }
 
             if !class_seen {
                 write_attribute(
-                    &Attribute::new(
-                        AttributeKind::Class,
-                        AttributeValue::String(name.to_owned()),
+                    (
+                        &AttributeKind::Class,
+                        &AttributeValue::String(name.to_owned()),
                     ),
                     buf,
                 );
@@ -242,7 +241,10 @@ fn htmlify_node(node: &AstNode, options: Option<HtmlOptions>, buf: &mut String) 
             buf.push_str("<a");
 
             write_attribute(
-                &Attribute::new(AttributeKind::Href, AttributeValue::String(href.to_owned())),
+                (
+                    &AttributeKind::Href,
+                    &AttributeValue::String(href.to_owned()),
+                ),
                 buf,
             );
             if let Some(attrs) = node.attributes.inner() {

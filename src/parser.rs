@@ -1,10 +1,12 @@
+use std::collections::BTreeMap;
+
 #[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
 
 use crate::{
     ast::{
-        AstAttributes, AstNode, Attribute, AttributeKind, AttributeValue, Attributes, CodeNode,
-        Document, HeadingNode, LinkNode, NamedNode, NodeKind, Quote, QuotedNode,
+        AstAttributes, AstNode, AttributeKind, AttributeValue, Attributes, CodeNode, Document,
+        HeadingNode, LinkNode, NamedNode, NodeKind, Quote, QuotedNode,
     },
     error::ParsingError,
     lexer::{Token, TokenKind},
@@ -299,10 +301,7 @@ fn is_block_end(cursor: &mut TokenCursor, is_lexeme: Option<&str>) -> bool {
 
 fn maybe_parse_attributes(cursor: &mut TokenCursor) -> Result<AstAttributes, ParsingError> {
     if cursor.peek_kind() == Some(TokenKind::OpenCurly) {
-        match parse_attributes(cursor) {
-            Ok(attrs) => Ok(AstAttributes::new(attrs)),
-            Err(e) => Err(e),
-        }
+        parse_attributes(cursor)
     } else {
         Ok(AstAttributes::empty())
     }
@@ -347,7 +346,7 @@ fn parse_code(parser: &mut Parser) -> ParseResult {
     parser.cursor.advance();
 
     let language = attrs
-        .pop_if(|p| p.kind == AttributeKind::Attr("language".to_owned()))
+        .remove(AttributeKind::Attr("language".to_owned()))
         .map(|v| v.inner());
 
     let node = CodeNode { language, body };
@@ -464,7 +463,7 @@ pub fn parse_inline_code(parser: &mut Parser) -> ParseResult {
     let mut attrs = maybe_parse_attributes(&mut parser.cursor)?;
 
     let language = attrs
-        .pop_if(|p| p.kind == AttributeKind::Attr("language".to_owned()))
+        .remove(AttributeKind::Attr("language".to_owned()))
         .map(|i| i.inner());
 
     debug_assert!(parser.cursor.peek_kind() == Some(TokenKind::OpenBrace));
@@ -484,7 +483,7 @@ pub fn parse_inline_link(parser: &mut Parser) -> ParseResult {
     parser.cursor.advance();
     let mut attrs = maybe_parse_attributes(&mut parser.cursor)?;
 
-    let href = match attrs.pop_if(|p| p.kind == AttributeKind::Href) {
+    let href = match attrs.remove(AttributeKind::Href) {
         Some(a) => a.inner(),
         None => return Err(ParsingError::MissingAttribute("href", "link")),
     };
@@ -652,21 +651,16 @@ pub fn parse_simple_inline(parser: &mut Parser) -> ParseResult {
     Ok(Parsed::Ok)
 }
 
-fn parse_attributes(cursor: &mut TokenCursor) -> Result<Attributes, ParsingError> {
-    let mut res: Attributes = Vec::new();
+fn parse_attributes(cursor: &mut TokenCursor) -> Result<AstAttributes, ParsingError> {
+    let mut attrs: Attributes = BTreeMap::new();
 
     debug_assert!(cursor.peek_kind() == Some(TokenKind::OpenCurly));
     cursor.advance();
 
     loop {
         skip_whitespace(cursor)?;
-        let attr = parse_attribute(cursor)?;
-        if res.iter().any(|a| a.kind == attr.kind) {
-            return Err(ParsingError::DuplicateAttribute(attr.kind));
-        } else {
-            res.push(attr);
-        }
-
+        let (kind, value) = parse_attribute(cursor)?;
+        attrs.insert(kind, value);
         if matches!(cursor.peek_kind(), Some(TokenKind::Comma)) {
             cursor.advance();
         } else if cursor.peek_kind() == Some(TokenKind::CloseCurly) {
@@ -675,10 +669,12 @@ fn parse_attributes(cursor: &mut TokenCursor) -> Result<Attributes, ParsingError
         }
     }
 
-    Ok(res)
+    Ok(AstAttributes::new(attrs))
 }
 
-fn parse_attribute(cursor: &mut TokenCursor) -> Result<Attribute, ParsingError> {
+fn parse_attribute(
+    cursor: &mut TokenCursor,
+) -> Result<(AttributeKind, AttributeValue), ParsingError> {
     let tok = cursor.advance();
     let (kind, short) = match tok.kind {
         TokenKind::Hashbang => (AttributeKind::Id, true),
@@ -709,7 +705,7 @@ fn parse_attribute(cursor: &mut TokenCursor) -> Result<Attribute, ParsingError> 
     };
 
     skip_whitespace(cursor)?;
-    Ok(Attribute { kind, value })
+    Ok((kind, value))
 }
 
 fn parse_attribute_value(cursor: &mut TokenCursor) -> AttributeValue {
@@ -821,7 +817,7 @@ mod tests {
                 vec![
                     AstNode::start_attrs(
                         NodeKind::Naked,
-                        AstAttributes::new(vec![Attribute::new(
+                        AstAttributes::from([(
                             AttributeKind::Class,
                             AttributeValue::String("huge".to_string()),
                         )]),
@@ -922,7 +918,7 @@ mod tests {
                 vec![
                     AstNode::start_attrs(
                         NodeKind::Heading(HeadingNode { level: 2 }),
-                        AstAttributes::new(vec![Attribute::new(
+                        AstAttributes::from([(
                             AttributeKind::Class,
                             AttributeValue::String("red".to_string()),
                         )]),
@@ -1107,42 +1103,39 @@ fn main() {
     #[test]
     fn test_parse_attributes() {
         let attributes = vec![
-            (
-                "name",
-                Attribute::new("name".into(), AttributeValue::Boolean),
-            ),
+            ("name", ("name".into(), AttributeValue::Boolean)),
             (
                 "name2=value",
-                Attribute::new("name2".into(), AttributeValue::String("value".to_string())),
+                ("name2".into(), AttributeValue::String("value".to_string())),
             ),
             (
                 "href=/some/other/page.html",
-                Attribute::new(
+                (
                     AttributeKind::Href,
                     AttributeValue::String("/some/other/page.html".to_string()),
                 ),
             ),
             (
                 ".class",
-                Attribute::new(
+                (
                     AttributeKind::Class,
                     AttributeValue::String("class".to_owned()),
                 ),
             ),
             (
                 "#id",
-                Attribute::new(AttributeKind::Id, AttributeValue::String("id".to_owned())),
+                (AttributeKind::Id, AttributeValue::String("id".to_owned())),
             ),
             (
                 "class=some spaced class",
-                Attribute::new(
+                (
                     AttributeKind::Class,
                     AttributeValue::String("some spaced class".to_owned()),
                 ),
             ),
             (
                 r#"id="quoted id""#,
-                Attribute::new(
+                (
                     AttributeKind::Id,
                     AttributeValue::String("quoted id".to_owned()),
                 ),
@@ -1169,22 +1162,22 @@ fn main() {
         assert!(parser.is_at_end());
         assert_eq!(
             res,
-            vec![
-                Attribute::new(
+            AstAttributes::from([
+                (
                     AttributeKind::Class,
                     AttributeValue::String("some-long-class".to_string())
                 ),
-                Attribute::new(
+                (
                     AttributeKind::Id,
                     AttributeValue::String("and-long-id".to_string())
                 ),
-                Attribute::new("name1".into(), AttributeValue::String("value".to_string())),
-                Attribute::new("name2".into(), AttributeValue::Boolean),
-                Attribute::new(
+                ("name1".into(), AttributeValue::String("value".to_string())),
+                ("name2".into(), AttributeValue::Boolean),
+                (
                     "name3".into(),
                     AttributeValue::String("value2 and more".to_string())
                 ),
-            ]
+            ])
         );
     }
 
@@ -1193,8 +1186,11 @@ fn main() {
         let lexer = tokenize(r#"{.some-class, class=duplicate}"#);
         let mut parser = Parser::new(lexer);
         assert_eq!(
-            parse_attributes(&mut parser.cursor),
-            Err(ParsingError::DuplicateAttribute(AttributeKind::Class))
+            parse_attributes(&mut parser.cursor).unwrap(),
+            AstAttributes::from([(
+                AttributeKind::Class,
+                AttributeValue::String("duplicate".to_owned())
+            )])
         );
     }
 }

@@ -4,7 +4,7 @@ expression: vizualised
 ---
 doc
   section class=important,
-    heading level=1 some=value, other=value2,
+    heading level=1 other=value2, some=value,
       str text = "Header -- it"
       str text = "'"
       str text = "s dashed"

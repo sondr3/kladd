@@ -1,6 +1,6 @@
 use crate::ast::{
-    AstNode, Attribute, AttributeKind, AttributeValue, Attributes, CodeNode, Document, HeadingNode,
-    LinkNode, NamedNode, NodeKind, NodeTag, Quote, QuotedNode,
+    AstNode, AttributeKind, AttributeValue, Attributes, CodeNode, Document, HeadingNode, LinkNode,
+    NamedNode, NodeKind, NodeTag, Quote, QuotedNode,
 };
 
 pub struct Visualizer {
@@ -59,11 +59,11 @@ pub fn visualize_nodes(nodes: &[AstNode]) -> String {
     vis.buf
 }
 
-fn write_attribute(attr: &Attribute, vis: &mut Visualizer) {
+fn write_attribute((kind, value): (&AttributeKind, &AttributeValue), vis: &mut Visualizer) {
     vis.push(' ');
-    attr.kind.write_ast(vis);
+    kind.write_ast(vis);
     vis.push('=');
-    match &attr.value {
+    match value {
         AttributeValue::String(v) => vis.push_str(v),
         AttributeValue::Boolean => vis.push_str("true"),
     }
@@ -266,10 +266,11 @@ fn visualize_node_inner(node: &AstNode, buf: &mut Visualizer) {
             buf.indent();
             buf.push_str("link");
 
-            write_attribute(
-                &Attribute::new(AttributeKind::Href, AttributeValue::String(href.to_owned())),
-                buf,
+            let attr = (
+                &AttributeKind::Href,
+                &AttributeValue::String(href.to_owned()),
             );
+            write_attribute(attr, buf);
             if let Some(attrs) = node.attributes.inner() {
                 write_attributes(attrs, buf);
             }
