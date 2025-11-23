@@ -1,9 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::{
-    ast::{AttributeKind, NodeKind},
-    lexer::TokenKind,
-};
+use crate::{ast::NodeKind, lexer::TokenKind};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParsingError {
@@ -11,7 +8,6 @@ pub enum ParsingError {
     UnexpectedEnd,
     UnexpectedTokenKind(TokenKind, &'static str),
     UnexpectedToken(TokenKind, String, &'static str),
-    DuplicateAttribute(AttributeKind),
     InvalidAttribute(TokenKind),
     InvalidAttributeKind(TokenKind),
     MissingAttribute(&'static str, &'static str),
@@ -31,9 +27,6 @@ impl Display for ParsingError {
                     "found {:?} with body {} in {} unexpectedly",
                     token, name, desc
                 )
-            }
-            ParsingError::DuplicateAttribute(kind) => {
-                write!(f, "found {:?} as a duplicate attribute", kind)
             }
             ParsingError::InvalidAttribute(kind) => {
                 write!(f, "{:?} is not a valid attribute", kind)
